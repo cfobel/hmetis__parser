@@ -10,7 +10,10 @@ pinlist: tin_pv11_4_4_
 pinlist: pv14_2_2_ 
 
 .output out:pv12_3_3_
-pinlist: pv12_3_3_ 
+pinlist: pv12_3_3_  \
+            pv14_2_2_ 0 1 open open 4 open \
+            blah blah2 blah3
+
 
 .clb ngfdn_3
 pinlist: n_n3810 open open open ngfdn_3 pclk 
@@ -18,5 +21,7 @@ subblock: ngfdn_3 0 open open open 4 5
 
 .clb pv14_2_2_  # Only LUT used.
 pinlist: n_n3358 n_n4153 open open pv14_2_2_ open 
-subblock: pv14_2_2_ 0 1 open open 4 open 
+subblock: pv14_2_2_ 0 1 open open 4 open \
+            pv14_2_2_ 0 1 open open 4 open \
+            blah blah2 blah3
 

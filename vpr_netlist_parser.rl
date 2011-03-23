@@ -61,27 +61,26 @@
 	# Star the break line elements. Just be careful to decrement the leaving
 	# priority as we don't want multiple character identifiers to be treated as
 	# multiple single char identifiers.
-#	line = ( blineElements** '\n' ) >start_line @end_line;
 	label = (alnum | [_:])+;
 	paddedlabel = whitespace+ label whitespace*;
 	pinlabel = 'open' | label;
 
 	emptyline = ( whitespace* '\n');
-	pins = whitespace+ pinlabel (whitespace | pinlabel)**;
+	pins = whitespace+ pinlabel ('\\\n' | whitespace | pinlabel)**;
 	pinlist = ( 'pinlist:' pins );
 	subblock = ( 'subblock:' pins );
     comment = ( '#' (whitespace* word)** );
-    endofline = ( whitespace* '\n' );
+    endofline = ( comment? whitespace* '\n' );
 
-	global =     ( '.global' paddedlabel comment? endofline );
-	input =      ( '.input'  paddedlabel comment? endofline 
-                        whitespace* pinlist comment? endofline ) 
+	global =     ( '.global' paddedlabel endofline );
+	input =      ( '.input'  paddedlabel endofline 
+                        whitespace* pinlist endofline ) 
                 >start_line %end_input;
-	output =     ( '.output' paddedlabel comment? endofline 
-                        whitespace* pinlist comment? endofline ) 
+	output =     ( '.output' paddedlabel endofline 
+                        whitespace* pinlist endofline ) 
                 >start_line %end_output;
-	logicblock = ( '.clb'    paddedlabel comment? endofline 
-                        whitespace* pinlist comment? endofline 
+	logicblock = ( '.clb'    paddedlabel endofline 
+                        whitespace* pinlist endofline 
                         whitespace* subblock endofline ) 
                 >start_line %end_clb;
 
