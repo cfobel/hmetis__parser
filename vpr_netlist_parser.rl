@@ -62,7 +62,7 @@ using namespace std;
 	# The whitespace separating words in a line.
 	whitespace = [ \t];
 
-	label = (alnum | [_:])+;
+	label = (alnum | [\[\]_:])+;
 	paddedlabel = whitespace+ label whitespace*;
 	pinlabel = 'open' | label;
 
