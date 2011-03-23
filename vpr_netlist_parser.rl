@@ -1,16 +1,13 @@
-/*
- * Perform the basic line parsing of input performed by awk.
- */
-
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#define eof EOF
+using namespace std;
 
 %%{
-	machine awkemu;
+	machine ParseVPR;
 
 	action start_word {
 		ws[nwords] = fpc;
@@ -22,6 +19,7 @@
 
 	action start_line {
 		ls = fpc;
+		ts = fpc;
 	}
 
 	action end_input {
@@ -37,9 +35,14 @@
 	}
 
 	action end_clb {
-		printf("found clb: ");
+        if(ts != be) {
+            cout << "We are continuing a previous token" << endl;
+            ls = buf;
+        }
+		printf("found clb: (%d)\n", (te - ls));
 		fwrite( ls, 1, p - ls, stdout );
 		printf("\n");
+        ts = 0;
 	}
 
 	action end_global {
@@ -48,19 +51,17 @@
 		printf("\n");
 	}
 
+	action end_block {
+        be = fpc;
+        te = fpc;
+	}
+
 	# Words in a line.
 	word = ^[ \t\n]+;
 
 	# The whitespace separating words in a line.
 	whitespace = [ \t];
 
-	# The components in a line to break up. Either a word or a single char of
-	# whitespace. On the word capture characters.
-	blineElements = word >start_word %end_word | whitespace;
-
-	# Star the break line elements. Just be careful to decrement the leaving
-	# priority as we don't want multiple character identifiers to be treated as
-	# multiple single char identifiers.
 	label = (alnum | [_:])+;
 	paddedlabel = whitespace+ label whitespace*;
 	pinlabel = 'open' | label;
@@ -81,23 +82,25 @@
                 >start_line %end_output;
 	logicblock = ( '.clb'    paddedlabel endofline 
                         whitespace* pinlist endofline 
-                        whitespace* subblock endofline ) 
+                        (whitespace* subblock endofline)+ ) 
                 >start_line %end_clb;
 
 	# Any number of lines.
-	main := (emptyline | global | input | output | logicblock)+;
+	main := (emptyline %end_block | global | input | output | logicblock)+;
 }%%
 
-%% write data noerror nofinal;
+%% write data nofinal;
 
 #define MAXWORDS 256
-#define BUFSIZE 4096
+#define BUFSIZE 512
 char buf[BUFSIZE];
 
 int main()
 {
 	int i, nwords = 0;
 	char *ls = 0;
+	char *ts, *te = 0;
+	char *be = 0;
 	char *ws[MAXWORDS];
 	char *we[MAXWORDS];
 
@@ -106,49 +109,49 @@ int main()
 
 	%% write init;
 
-	while ( 1 ) {
-		char *p, *pe, *data = buf + have;
-		int len, space = BUFSIZE - have;
-		fprintf( stderr, "space: %i\n", space );
-
-		if ( space == 0 ) { 
-			fprintf(stderr, "buffer out of space\n");
-			exit(1);
-		}
-
-		len = fread( data, 1, space, stdin );
-		fprintf( stderr, "len: %i\n", len );
-		if ( len == 0 )
-			break;
-
-		/* Find the last newline by searching backwards. This is where 
-		 * we will stop processing on this iteration. */
-		p = buf;
-		pe = buf + have + len - 1;
-		while ( *pe != '\n' && pe >= buf )
-			pe--;
-        if(*pe != '\n') {
-            fprintf(stderr, "No end of line.\n");
+    bool done = false;
+    while ( !done ) {
+        /* How much space is in the buffer? */
+        int space = BUFSIZE - have;
+        if ( space == 0 ) {
+            /* Buffer is full. */
+            cerr << "TOKEN TOO BIG" << endl;
+            exit(1);
         }
-        pe += 1;
+        /* Read in a block after any data we already have. */
+        char *p = buf + have;
+        cin.read( p, space );
+        int len = cin.gcount();
+        char *pe = p + len;
+        char *eof = 0;
 
-		fprintf( stderr, "running on: %i\n", pe - p );
-        printf("***************\n%s\n***************\n", p);
+        /* If no data was read indicate EOF. */
+        if ( len == 0 ) {
+            eof = pe;
+            done = true;
+        } else {
+            cout << "Executing..." << endl;
+            cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << endl;
+            fwrite( buf, 1, pe - buf, stdout );
+            cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+            %% write exec;
 
-		%% write exec;
-
-		/* How much is still in the buffer. */
-		have = data + len - pe;
-		if ( have > 0 )
-			memmove( buf, pe, have );
-
-		fprintf(stderr, "have: %i\n", have );
-
-		if ( len < space )
-			break;
-	}
-
-	if ( have > 0 )
-		fprintf(stderr, "input not newline terminated\n");
-	return 0;
+            if ( cs == ParseVPR_error ) {
+                /* Machine failed before finding a token. */
+                cerr << "PARSE ERROR" << endl;
+                exit(1);
+            }
+            if ( ts == 0 ) {
+                cout << "Have none left..." << endl;
+                have = 0;
+            } else {
+                /* There is a prefix to preserve, shift it over. */
+                have = pe - ts;
+                cout << "Have some left: " << have << endl;
+                memmove( buf, ts, have );
+                te = buf + (te-ts);
+                ts = buf;
+            }
+        }
+    }
 }

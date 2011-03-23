@@ -2,7 +2,7 @@
 env=Environment()
 
 ragel_bld = Builder(action = '/usr/bin/ragel -o $TARGET $SOURCE',
-              suffix = '.c', src_suffix = '.rl')
+              suffix = '.cpp', src_suffix = '.rl')
 ragel_dot_bld = Builder(action = '/usr/bin/ragel -o $TARGET -V -p $SOURCE',
               suffix = '.dot', src_suffix = '.rl')
 dot_bld = Builder(action = '/usr/bin/dot -o $TARGET -Tpdf $SOURCE',
