@@ -6,16 +6,26 @@
 
 using namespace std;
 
+#define BUFSIZE 512
+
+struct VPRNetParser {
+    char buf[BUFSIZE];
+
+	const char *ls;
+	const char *ts;
+	const char *te;
+	const char *be;
+
+	int cs;
+	int have;
+
+	void init();
+	void parse();
+};
+
+
 %%{
-	machine ParseVPR;
-
-	action start_word {
-		ws[nwords] = fpc;
-	}
-
-	action end_word {
-		we[nwords++] = fpc;
-	}
+	machine VPRNetParser;
 
 	action start_line {
 		ls = fpc;
@@ -91,25 +101,14 @@ using namespace std;
 
 %% write data nofinal;
 
-#define MAXWORDS 256
-#define BUFSIZE 512
-char buf[BUFSIZE];
-
-int main()
-{
-	int i, nwords = 0;
-	char *ls = 0;
-	char *ts, *te = 0;
-	char *be = 0;
-	char *ws[MAXWORDS];
-	char *we[MAXWORDS];
-
-	int cs;
-	int have = 0;
-
+void VPRNetParser::init() {
 	%% write init;
+}
 
+void VPRNetParser::parse() {
     bool done = false;
+    int i = 0;
+    have = 0;
     while ( !done ) {
         /* How much space is in the buffer? */
         int space = BUFSIZE - have;
@@ -136,7 +135,7 @@ int main()
             cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
             %% write exec;
 
-            if ( cs == ParseVPR_error ) {
+            if ( cs == VPRNetParser_error ) {
                 /* Machine failed before finding a token. */
                 cerr << "PARSE ERROR" << endl;
                 exit(1);
@@ -154,4 +153,14 @@ int main()
             }
         }
     }
+}
+
+int main() {
+    VPRNetParser parser;
+    cout << "Initialize" << endl;
+
+	parser.init();
+    parser.parse();
+    cout << "Done" << endl;
+	return 0;
 }
