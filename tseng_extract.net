@@ -1,0 +1,21 @@
+.global pclk
+
+.input tin_pv10_4_4_
+pinlist: tin_pv10_4_4_ 
+
+.input tin_pv11_4_4_
+pinlist: tin_pv11_4_4_ 
+
+.output out:pv14_2_2_
+pinlist: pv14_2_2_ 
+
+.output out:pv12_3_3_
+pinlist: pv12_3_3_ 
+
+.clb ngfdn_3
+pinlist: n_n3810 open open open ngfdn_3 pclk 
+subblock: ngfdn_3 0 open open open 4 5 
+
+.clb pv14_2_2_  # Only LUT used.
+pinlist: n_n3358 n_n4153 open open pv14_2_2_ open 
+subblock: pv14_2_2_ 0 1 open open 4 open 
