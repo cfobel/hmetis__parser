@@ -19,3 +19,4 @@ subblock: ngfdn_3 0 open open open 4 5
 .clb pv14_2_2_  # Only LUT used.
 pinlist: n_n3358 n_n4153 open open pv14_2_2_ open 
 subblock: pv14_2_2_ 0 1 open open 4 open 
+

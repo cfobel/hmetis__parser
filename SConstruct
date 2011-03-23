@@ -19,4 +19,4 @@ vpr_source = env.Ragel('vpr_netlist_parser.rl')
 Program(vpr_source)
 
 dot = env.RagelDot('vpr_netlist_parser.rl')
-#env.Dot('vpr_netlist_parser.dot')
+env.Dot('vpr_netlist_parser.dot')

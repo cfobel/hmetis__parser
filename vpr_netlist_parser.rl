@@ -67,17 +67,26 @@
 	pinlabel = 'open' | label;
 
 	emptyline = ( whitespace* '\n');
-	pinlist = ( 'pinlist:' whitespace+ (pinlabel whitespace+)+ );
-	subblock = ( 'subblock:' whitespace+ (pinlabel whitespace+)+ );
-    comment = ( whitespace* '#' any* )?;
+	pins = whitespace+ pinlabel (whitespace | pinlabel)**;
+	pinlist = ( 'pinlist:' pins );
+	subblock = ( 'subblock:' pins );
+    comment = ( '#' (whitespace* word)** );
+    endofline = ( whitespace* '\n' );
 
-	global =     ( '.global' paddedlabel '\n')                      >start_line @end_global;
-	input =      ( '.input'  paddedlabel '\n' whitespace* pinlist ) >start_line %end_input;
-	output =     ( '.output' paddedlabel '\n' whitespace* pinlist ) >start_line %end_output;
-	logicblock = ( '.clb'    paddedlabel comment '\n' whitespace* pinlist whitespace* '\n' whitespace* subblock whitespace* ) >start_line %end_clb;
+	global =     ( '.global' paddedlabel comment? endofline );
+	input =      ( '.input'  paddedlabel comment? endofline 
+                        whitespace* pinlist comment? endofline ) 
+                >start_line %end_input;
+	output =     ( '.output' paddedlabel comment? endofline 
+                        whitespace* pinlist comment? endofline ) 
+                >start_line %end_output;
+	logicblock = ( '.clb'    paddedlabel comment? endofline 
+                        whitespace* pinlist comment? endofline 
+                        whitespace* subblock endofline ) 
+                >start_line %end_clb;
 
 	# Any number of lines.
-	main := (global | emptyline | input | output | logicblock)+;
+	main := (emptyline | global | input | output | logicblock)+;
 }%%
 
 %% write data noerror nofinal;
@@ -119,10 +128,13 @@ int main()
 		pe = buf + have + len - 1;
 		while ( *pe != '\n' && pe >= buf )
 			pe--;
-		pe += 1;
+        if(*pe != '\n') {
+            fprintf(stderr, "No end of line.\n");
+        }
+        pe += 1;
 
 		fprintf( stderr, "running on: %i\n", pe - p );
-        printf("%s", p);
+        printf("***************\n%s\n***************\n", p);
 
 		%% write exec;
 
