@@ -51,29 +51,22 @@ void VPRNetParser::display_pins() {
 	}
 
 	action end_input {
-		cout << "found input: " << label << endl;
+		cout << "input: " << label << endl;
         display_pins();
 	}
 
 	action end_output {
-		cout << "found output: " << label << endl;
+		cout << "output: " << label << endl;
         display_pins();
 	}
 
 	action end_clb {
         if(ts != be) {
-            cout << "We are continuing a previous token" << endl;
             ls = buf;
         }
-		cout << "found clb: " << label << endl;
+		cout << "clb: " << label << endl;
         display_pins();
         ts = 0;
-	}
-
-	action end_global {
-		printf("found global: ");
-		fwrite( ls, 1, p - ls, stdout );
-		printf("\n");
 	}
 
 	action end_block {
@@ -97,7 +90,6 @@ void VPRNetParser::display_pins() {
     action end_pin {
         length = fpc - pin_start;
         if(length < 0) {
-            cout << "*** end_pin: content wraps around -> " << length << endl;
             pin_start = buf + (pin_start - be);
         }
         if(in_pin_list) pin_list.push_back(string(pin_start, fpc - pin_start));
@@ -110,7 +102,6 @@ void VPRNetParser::display_pins() {
     action end_label {
         length = fpc - label_start;
         if(length < 0) {
-            cout << "*** end_label: content wraps around -> " << length<< endl;
             label_start = buf + (label_start - be);
         }
         label = string(label_start, fpc - label_start);
@@ -182,12 +173,6 @@ void VPRNetParser::parse() {
             eof = pe;
             done = true;
         } else {
-            cout << "Executing..." << endl;
-            cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << endl;
-            //fwrite( buf, 1, pe - buf, stdout );
-            string test(buf, pe - buf);
-            cout << test;
-            cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
             %% write exec;
 
             if ( cs == VPRNetParser_error ) {
@@ -201,7 +186,6 @@ void VPRNetParser::parse() {
             } else {
                 /* There is a prefix to preserve, shift it over. */
                 have = pe - ts;
-                cout << "Have some left: " << have << endl;
                 memmove( buf, ts, have );
                 te = buf + (te-ts);
                 ts = buf;
