@@ -1,7 +1,7 @@
 # SConstruct file
 env=Environment()
 
-ragel_bld = Builder(action = '/usr/bin/ragel -o $TARGET $SOURCE',
+ragel_bld = Builder(action = '/usr/bin/ragel -G2 -o $TARGET $SOURCE',
               suffix = '.cpp', src_suffix = '.rl')
 ragel_dot_bld = Builder(action = '/usr/bin/ragel -o $TARGET -V -p $SOURCE',
               suffix = '.dot', src_suffix = '.rl')
