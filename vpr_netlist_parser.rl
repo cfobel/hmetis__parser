@@ -1,10 +1,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 using namespace std;
 
