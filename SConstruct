@@ -15,8 +15,8 @@ env['BUILDERS']['RagelDot'] = ragel_dot_bld
 env['BUILDERS']['Dot'] = dot_bld
 
 # Generate foo.vds from foo.txt using mk_vds
-vpr_source = env.Ragel('vpr_netlist_parser.rl')
-Program(vpr_source)
+vpr_source = env.Ragel('VPRNetParser.rl')
+Program('VPRNetParser', ['main.cpp', vpr_source])
 
-dot = env.RagelDot('vpr_netlist_parser.rl')
-env.Dot('vpr_netlist_parser.dot')
+dot = env.RagelDot('VPRNetParser.rl')
+env.Dot(dot)

@@ -1,14 +1,4 @@
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <string.h>
-#include <stdlib.h>
-
-using namespace std;
-
-#define DEF_BUFSIZE 8192
+#include "VPRNetParser.hpp"
 
 %%{
 	machine VPRNetParser;
@@ -108,53 +98,11 @@ using namespace std;
 	main := (emptyline %end_block | global | input | output | logicblock)+;
 }%%
 
-typedef boost::function<void (const string &x, const vector<string> &y)> process_func_t;
 
-class VPRNetParser {
-    /* Regal data ****************************************/
-    %% write data nofinal;
-    /* Regal data: end ***********************************/
+/* Regal data ****************************************/
+%% write data nofinal;
+/* Regal data: end ***********************************/
 
-    vector<char> buf_vector;
-    char* buf;
-    int BUFSIZE;
-
-	const char *ls;
-	const char *ts;
-	const char *te;
-	const char *be;
-	const char *pin_start;
-	const char *label_start;
-
-	int cs;
-	int have;
-	int length;
-
-    vector<string> pin_list;
-    string label;
-    bool in_pin_list;
-    process_func_t clb_process_func;
-    process_func_t input_process_func;
-    process_func_t output_process_func;
-
-public:
-    VPRNetParser() {
-        buf_vector = vector<char>(DEF_BUFSIZE);
-    }
-    VPRNetParser(int buffer_size) {
-        buf_vector = vector<char>(buffer_size);
-    }
-	void init();
-	void parse();
-	void display_pins();
-
-    void register_input_process_func(process_func_t fun) { input_process_func = fun; }
-    void process_input() { input_process_func(label, pin_list); }
-    void register_output_process_func(process_func_t fun) { output_process_func = fun; }
-    void process_output() { output_process_func(label, pin_list); }
-    void register_clb_process_func(process_func_t fun) { clb_process_func = fun; }
-    void process_clb() { clb_process_func(label, pin_list); }
-};
 
 void VPRNetParser::display_pins() {
     cout << "Pins:";
@@ -164,13 +112,13 @@ void VPRNetParser::display_pins() {
     cout << endl;
 }
 
-
 void VPRNetParser::init() {
     buf = &buf_vector[0];
     BUFSIZE = buf_vector.size();
 
 	%% write init;
 }
+
 
 void VPRNetParser::parse() {
     bool done = false;
@@ -214,48 +162,4 @@ void VPRNetParser::parse() {
             }
         }
     }
-}
-
-class BlockHandler {
-public:
-    void process_clb(const string &label, const vector<string> &pins) {
-        cout << "CLB: " << label << endl;
-        cout << "  Pins: ";
-        for(int i = 0; i < pins.size(); i++) {
-            cout << " " << pins[i];
-        }
-        cout << endl;
-    }
-
-    void process_input(const string &label, const vector<string> &pins) {
-        cout << "input: " << label << endl;
-        cout << "  Pins: ";
-        for(int i = 0; i < pins.size(); i++) {
-            cout << " " << pins[i];
-        }
-        cout << endl;
-    }
-
-    void process_output(const string &label, const vector<string> &pins) {
-        cout << "output: " << label << endl;
-        cout << "  Pins: ";
-        for(int i = 0; i < pins.size(); i++) {
-            cout << " " << pins[i];
-        }
-        cout << endl;
-    }
-};
-
-int main() {
-    VPRNetParser parser(32 << 10);
-    BlockHandler b;
-    cout << "Initialize" << endl;
-
-	parser.init();
-    parser.register_input_process_func(boost::bind(&BlockHandler::process_input, b, _1, _2));
-    parser.register_output_process_func(boost::bind(&BlockHandler::process_output, b, _1, _2));
-    parser.register_clb_process_func(boost::bind(&BlockHandler::process_clb, b, _1, _2));
-    parser.parse();
-    cout << "Done" << endl;
-	return 0;
 }
