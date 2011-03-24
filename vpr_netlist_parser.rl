@@ -114,19 +114,19 @@ void VPRNetParser::display_pins() {
 	# The whitespace separating words in a line.
 	whitespace = [ \t];
 
-	label_char = alnum | [\[\]_:];
+	label_char = alnum | [\[\]_:\\];
 	label = label_char (label_char)* $1 %0;
     block_label = label >start_label %end_label;
 	paddedlabel = whitespace+ block_label whitespace*;
 	properlabel = (label - "open") >start_pin %end_pin;
 	pinlabel = ("open" | properlabel);
 
-	emptyline = ( whitespace* '\n');
 	pins = whitespace+ pinlabel ('\\\n' | whitespace+ | pinlabel)* $1 %0;
 	pinlist = ( 'pinlist:' pins ) >start_pinlist %end_pinlist;
 	subblock = ( 'subblock:' pins );
     comment = ( '#' (whitespace* word)** );
     endofline = ( comment? whitespace* '\n' );
+	emptyline = whitespace* endofline;
 
 	global =     ( '.global' paddedlabel endofline );
 	input =      ( '.input'  paddedlabel endofline 
