@@ -8,9 +8,9 @@
 
 using namespace std;
 
-#define BUFSIZE 512
+#define BUFSIZE 8192
 
-struct VPRNetParser {
+class VPRNetParser {
     char buf[BUFSIZE];
 
 	const char *ls;
@@ -28,6 +28,7 @@ struct VPRNetParser {
     string label;
     bool in_pin_list;
 
+public:
 	void init();
 	void parse();
 	void display_pins();
@@ -121,7 +122,7 @@ void VPRNetParser::display_pins() {
 	pinlabel = ("open" | properlabel);
 
 	emptyline = ( whitespace* '\n');
-	pins = whitespace+ pinlabel ('\\\n' | whitespace+ | pinlabel)+ $1 %0;
+	pins = whitespace+ pinlabel ('\\\n' | whitespace+ | pinlabel)* $1 %0;
 	pinlist = ( 'pinlist:' pins ) >start_pinlist %end_pinlist;
 	subblock = ( 'subblock:' pins );
     comment = ( '#' (whitespace* word)** );
