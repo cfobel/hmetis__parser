@@ -104,14 +104,6 @@
 /* Regal data: end ***********************************/
 
 
-void VPRNetParser::display_pins() {
-    cout << "Pins:";
-    for(int i = 0; i < pin_list.size(); i++) {
-        cout << " " << pin_list[i];
-    }
-    cout << endl;
-}
-
 void VPRNetParser::init() {
     buf = &buf_vector[0];
     BUFSIZE = buf_vector.size();
@@ -120,7 +112,7 @@ void VPRNetParser::init() {
 }
 
 
-void VPRNetParser::parse() {
+void VPRNetParser::parse(std::istream &in_stream) {
     bool done = false;
     int i = 0;
     have = 0;
@@ -134,8 +126,8 @@ void VPRNetParser::parse() {
         }
         /* Read in a block after any data we already have. */
         char *p = buf + have;
-        cin.read( p, space );
-        int len = cin.gcount();
+        in_stream.read( p, space );
+        int len = in_stream.gcount();
         char *pe = p + len;
         char *eof = 0;
 

@@ -47,8 +47,7 @@ public:
         buf_vector = vector<char>(buffer_size);
     }
 	void init();
-	void parse();
-	void display_pins();
+	void parse(std::istream &in_stream);
 
     void register_input_process_func(process_func_t fun) { input_process_func = fun; }
     void process_input() { input_process_func(label, pin_list); }
