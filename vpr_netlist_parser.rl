@@ -8,10 +8,12 @@
 
 using namespace std;
 
-#define BUFSIZE 8192
+#define DEF_BUFSIZE 8192
 
 class VPRNetParser {
-    char buf[BUFSIZE];
+    vector<char> buf_vector;
+    char* buf;
+    int BUFSIZE;
 
 	const char *ls;
 	const char *ts;
@@ -29,6 +31,12 @@ class VPRNetParser {
     bool in_pin_list;
 
 public:
+    VPRNetParser() {
+        buf_vector = vector<char>(DEF_BUFSIZE);
+    }
+    VPRNetParser(int buffer_size) {
+        buf_vector = vector<char>(buffer_size);
+    }
 	void init();
 	void parse();
 	void display_pins();
@@ -52,21 +60,15 @@ void VPRNetParser::display_pins() {
 	}
 
 	action end_input {
-		cout << "input: " << label << endl;
-        display_pins();
 	}
 
 	action end_output {
-		cout << "output: " << label << endl;
-        display_pins();
 	}
 
 	action end_clb {
         if(ts != be) {
             ls = buf;
         }
-		cout << "clb: " << label << endl;
-        display_pins();
         ts = 0;
 	}
 
@@ -147,6 +149,9 @@ void VPRNetParser::display_pins() {
 %% write data nofinal;
 
 void VPRNetParser::init() {
+    buf = &buf_vector[0];
+    BUFSIZE = buf_vector.size();
+
 	%% write init;
 }
 
@@ -182,7 +187,6 @@ void VPRNetParser::parse() {
                 exit(1);
             }
             if ( ts == 0 ) {
-                cout << "Have none left..." << endl;
                 have = 0;
             } else {
                 /* There is a prefix to preserve, shift it over. */
@@ -196,7 +200,7 @@ void VPRNetParser::parse() {
 }
 
 int main() {
-    VPRNetParser parser;
+    VPRNetParser parser(32 << 10);
     cout << "Initialize" << endl;
 
 	parser.init();
