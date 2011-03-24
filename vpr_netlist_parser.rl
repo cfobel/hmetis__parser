@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+#include <vector>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -15,13 +17,28 @@ struct VPRNetParser {
 	const char *ts;
 	const char *te;
 	const char *be;
+	const char *pin_start;
+	const char *label_start;
 
 	int cs;
 	int have;
 
+    vector<string> pin_list;
+    string label;
+    bool in_pin_list;
+
 	void init();
 	void parse();
+	void display_pins();
 };
+
+void VPRNetParser::display_pins() {
+    cout << "Pins:";
+    for(int i = 0; i < pin_list.size(); i++) {
+        cout << " " << pin_list[i];
+    }
+    cout << endl;
+}
 
 
 %%{
@@ -33,15 +50,13 @@ struct VPRNetParser {
 	}
 
 	action end_input {
-		printf("found input: ");
-		fwrite( ls, 1, p - ls, stdout );
-		printf("\n");
+		cout << "found input: " << label << endl;
+        display_pins();
 	}
 
 	action end_output {
-		printf("found output: ");
-		fwrite( ls, 1, p - ls, stdout );
-		printf("\n");
+		cout << "found output: " << label << endl;
+        display_pins();
 	}
 
 	action end_clb {
@@ -49,9 +64,8 @@ struct VPRNetParser {
             cout << "We are continuing a previous token" << endl;
             ls = buf;
         }
-		printf("found clb: (%d)\n", (te - ls));
-		fwrite( ls, 1, p - ls, stdout );
-		printf("\n");
+		cout << "found clb: " << label << endl;
+        display_pins();
         ts = 0;
 	}
 
@@ -65,6 +79,31 @@ struct VPRNetParser {
         be = fpc;
         te = fpc;
 	}
+    
+    action start_pinlist {
+        pin_list.clear();
+        in_pin_list = true;
+    }
+    
+    action end_pinlist {
+        in_pin_list = false;
+    }
+    
+    action start_pin {
+        pin_start = fpc;
+    }
+    
+    action end_pin {
+        if(in_pin_list) pin_list.push_back(string(pin_start, fpc - pin_start));
+    }
+
+    action start_label {
+        label_start = fpc;
+    }
+    
+    action end_label {
+        label = string(label_start, fpc - label_start);
+    }
 
 	# Words in a line.
 	word = ^[ \t\n]+;
@@ -72,13 +111,16 @@ struct VPRNetParser {
 	# The whitespace separating words in a line.
 	whitespace = [ \t];
 
-	label = (alnum | [\[\]_:])+;
-	paddedlabel = whitespace+ label whitespace*;
-	pinlabel = 'open' | label;
+	label_char = alnum | [\[\]_:];
+	label = label_char (label_char)* $1 %0;
+    block_label = label >start_label %end_label;
+	paddedlabel = whitespace+ block_label whitespace*;
+	properlabel = (label - "open") >start_pin %end_pin;
+	pinlabel = ("open" | properlabel);
 
 	emptyline = ( whitespace* '\n');
-	pins = whitespace+ pinlabel ('\\\n' | whitespace | pinlabel)**;
-	pinlist = ( 'pinlist:' pins );
+	pins = whitespace+ pinlabel ('\\\n' | whitespace+ | pinlabel)+ $1 %0;
+	pinlist = ( 'pinlist:' pins ) >start_pinlist %end_pinlist;
 	subblock = ( 'subblock:' pins );
     comment = ( '#' (whitespace* word)** );
     endofline = ( comment? whitespace* '\n' );
@@ -131,7 +173,9 @@ void VPRNetParser::parse() {
         } else {
             cout << "Executing..." << endl;
             cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << endl;
-            fwrite( buf, 1, pe - buf, stdout );
+            //fwrite( buf, 1, pe - buf, stdout );
+            string test(buf, pe - buf);
+            cout << test;
             cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
             %% write exec;
 
