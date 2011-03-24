@@ -10,47 +10,6 @@ using namespace std;
 
 #define DEF_BUFSIZE 8192
 
-class VPRNetParser {
-    vector<char> buf_vector;
-    char* buf;
-    int BUFSIZE;
-
-	const char *ls;
-	const char *ts;
-	const char *te;
-	const char *be;
-	const char *pin_start;
-	const char *label_start;
-
-	int cs;
-	int have;
-	int length;
-
-    vector<string> pin_list;
-    string label;
-    bool in_pin_list;
-
-public:
-    VPRNetParser() {
-        buf_vector = vector<char>(DEF_BUFSIZE);
-    }
-    VPRNetParser(int buffer_size) {
-        buf_vector = vector<char>(buffer_size);
-    }
-	void init();
-	void parse();
-	void display_pins();
-};
-
-void VPRNetParser::display_pins() {
-    cout << "Pins:";
-    for(int i = 0; i < pin_list.size(); i++) {
-        cout << " " << pin_list[i];
-    }
-    cout << endl;
-}
-
-
 %%{
 	machine VPRNetParser;
 
@@ -146,7 +105,51 @@ void VPRNetParser::display_pins() {
 	main := (emptyline %end_block | global | input | output | logicblock)+;
 }%%
 
-%% write data nofinal;
+
+class VPRNetParser {
+    /* Regal data ****************************************/
+    %% write data nofinal;
+    /* Regal data: end ***********************************/
+
+    vector<char> buf_vector;
+    char* buf;
+    int BUFSIZE;
+
+	const char *ls;
+	const char *ts;
+	const char *te;
+	const char *be;
+	const char *pin_start;
+	const char *label_start;
+
+	int cs;
+	int have;
+	int length;
+
+    vector<string> pin_list;
+    string label;
+    bool in_pin_list;
+
+public:
+    VPRNetParser() {
+        buf_vector = vector<char>(DEF_BUFSIZE);
+    }
+    VPRNetParser(int buffer_size) {
+        buf_vector = vector<char>(buffer_size);
+    }
+	void init();
+	void parse();
+	void display_pins();
+};
+
+void VPRNetParser::display_pins() {
+    cout << "Pins:";
+    for(int i = 0; i < pin_list.size(); i++) {
+        cout << " " << pin_list[i];
+    }
+    cout << endl;
+}
+
 
 void VPRNetParser::init() {
     buf = &buf_vector[0];
