@@ -22,6 +22,7 @@ struct VPRNetParser {
 
 	int cs;
 	int have;
+	int length;
 
     vector<string> pin_list;
     string label;
@@ -94,6 +95,11 @@ void VPRNetParser::display_pins() {
     }
     
     action end_pin {
+        length = fpc - pin_start;
+        if(length < 0) {
+            cout << "*** end_pin: content wraps around -> " << length << endl;
+            pin_start = buf + (pin_start - be);
+        }
         if(in_pin_list) pin_list.push_back(string(pin_start, fpc - pin_start));
     }
 
@@ -102,6 +108,11 @@ void VPRNetParser::display_pins() {
     }
     
     action end_label {
+        length = fpc - label_start;
+        if(length < 0) {
+            cout << "*** end_label: content wraps around -> " << length<< endl;
+            label_start = buf + (label_start - be);
+        }
         label = string(label_start, fpc - label_start);
     }
 
