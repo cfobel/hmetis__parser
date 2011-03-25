@@ -8,6 +8,20 @@
 		ts = fpc;
 	}
 
+    action end_global {
+        process_global();
+    }
+
+    action start_subblock {
+        subblocks.push_back(vector<string>());
+        p_subblock_pin_list = &subblocks[subblocks.size() - 1];
+        in_subblock_pin_list = true;
+    }
+
+    action end_subblock {
+        in_subblock_pin_list = false;
+    }
+
 	action end_input {
         process_input();
 	}
@@ -15,6 +29,12 @@
 	action end_output {
         process_output();
 	}
+
+	action start_clb {
+        subblocks.clear();
+        ls = fpc;
+        ts = fpc;
+    }
 
 	action end_clb {
         if(ts != be) {
@@ -30,7 +50,7 @@
 	}
     
     action start_pinlist {
-        pin_list.clear();
+        clb_pin_list.clear();
         in_pin_list = true;
     }
     
@@ -47,7 +67,13 @@
         if(length < 0) {
             pin_start = buf + (pin_start - be);
         }
-        if(in_pin_list) pin_list.push_back(string(pin_start, fpc - pin_start));
+        if(in_pin_list) {
+            clb_pin_list.push_back( 
+                string(pin_start, fpc - pin_start));
+        } else if(in_subblock_pin_list) {
+            (*p_subblock_pin_list).push_back( 
+                string(pin_start, fpc - pin_start));
+        }
     }
 
     action start_label {
@@ -72,17 +98,17 @@
 	label = label_char (label_char)* $1 %0;
     block_label = label >start_label %end_label;
 	paddedlabel = whitespace+ block_label whitespace*;
-	properlabel = (label - "open") >start_pin %end_pin;
-	pinlabel = ("open" | properlabel);
+	pinlabel = (label) >start_pin %end_pin;
 
 	pins = whitespace+ pinlabel ('\\\n' | whitespace+ | pinlabel)* $1 %0;
 	pinlist = ( 'pinlist:' pins ) >start_pinlist %end_pinlist;
-	subblock = ( 'subblock:' pins );
+	subblock = ( 'subblock:' pins ) >start_subblock %end_subblock;
     comment = ( '#' (whitespace* word)** );
     endofline = ( comment? whitespace* '\n' );
 	emptyline = whitespace* endofline;
 
-	global =     ( '.global' paddedlabel endofline );
+	global =     ( '.global' paddedlabel endofline )
+                >start_line %end_global;
 	input =      ( '.input'  paddedlabel endofline 
                         whitespace* pinlist endofline ) 
                 >start_line %end_input;
@@ -92,7 +118,7 @@
 	logicblock = ( '.clb'    paddedlabel endofline 
                         whitespace* pinlist endofline 
                         (whitespace* subblock endofline)+ ) 
-                >start_line %end_clb;
+                >start_clb %end_clb;
 
 	# Any number of lines.
 	main := (emptyline %end_block | global | input | output | logicblock)+;

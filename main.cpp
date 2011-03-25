@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     // any changes state updates would not be made to instance b.
     parser.register_input_process_func(boost::bind(&BlockHandler::process_input, &b, _1, _2));
     parser.register_output_process_func(boost::bind(&BlockHandler::process_output, &b, _1, _2));
-    parser.register_clb_process_func(boost::bind(&BlockHandler::process_clb, &b, _1, _2));
+    parser.register_clb_process_func(boost::bind(&BlockHandler::process_clb, &b, _1, _2, _3));
     parser.parse(file1);
     file1.close();
     cout << "Done" << endl;

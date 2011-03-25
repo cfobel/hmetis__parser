@@ -13,10 +13,13 @@ using namespace std;
 
 #define DEF_BUFSIZE 8192
 
-typedef boost::function<void (const string &x, const vector<string> &y)> process_func_t;
+typedef boost::function<void (const string &label, const vector<string> &pins)> 
+            process_func_t;
+typedef boost::function<void (const string &label, const vector<string> &pins,
+                                        const vector< vector<string> > &subblocks)> 
+            clb_process_func_t;
 
 class VPRNetParser {
-
     vector<char> buf_vector;
     char* buf;
     int BUFSIZE;
@@ -32,10 +35,13 @@ class VPRNetParser {
 	int have;
 	int length;
 
-    vector<string> pin_list;
+    vector<string> clb_pin_list;
+    vector<string> *p_subblock_pin_list;
+    vector<vector<string> > subblocks;
     string label;
     bool in_pin_list;
-    process_func_t clb_process_func;
+    bool in_subblock_pin_list;
+    clb_process_func_t clb_process_func;
     process_func_t input_process_func;
     process_func_t output_process_func;
 
@@ -49,12 +55,19 @@ public:
 	void init();
 	void parse(std::istream &in_stream);
 
-    void register_input_process_func(process_func_t fun) { input_process_func = fun; }
-    void process_input() { input_process_func(label, pin_list); }
-    void register_output_process_func(process_func_t fun) { output_process_func = fun; }
-    void process_output() { output_process_func(label, pin_list); }
-    void register_clb_process_func(process_func_t fun) { clb_process_func = fun; }
-    void process_clb() { clb_process_func(label, pin_list); }
+    void register_input_process_func(process_func_t fun) {
+        input_process_func = fun; }
+    void register_output_process_func(process_func_t fun) { 
+        output_process_func = fun; }
+    void register_clb_process_func(clb_process_func_t fun) { 
+        clb_process_func = fun; }
+
+    void process_input() { input_process_func(label, clb_pin_list); }
+    void process_output() { output_process_func(label, clb_pin_list); }
+    void process_clb() { 
+        clb_process_func(label, clb_pin_list, subblocks); 
+    }
+    void process_global() { cout << "global: " << label << endl; }
 };
 
 #endif

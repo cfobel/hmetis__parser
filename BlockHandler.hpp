@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/foreach.hpp>
 
 class BlockHandler {
 public:
@@ -11,7 +12,8 @@ public:
     int output_count;
 
     BlockHandler() : clb_count(0), input_count(0), output_count(0) {}
-    void process_clb(const string &label, const vector<string> &pins) {
+    void process_clb(const string &label, const vector<string> &pins,
+            const vector< vector<string> > &subblocks) {
         clb_count++;
         cout << "CLB: " << label << endl;
         cout << "  Pins: ";
@@ -19,6 +21,14 @@ public:
             cout << " " << pins[i];
         }
         cout << endl;
+        int i = 0;
+        BOOST_FOREACH(const vector<string> &v, subblocks) {
+            cout << "  Subblock[" << i++ << "]:";
+            BOOST_FOREACH(string s, v) {
+                cout << " " << s;
+            }
+            cout << endl;
+        }
     }
 
     void process_input(const string &label, const vector<string> &pins) {
