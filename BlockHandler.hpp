@@ -5,6 +5,8 @@
 #include <vector>
 #include <boost/foreach.hpp>
 
+#define VERBOSE
+
 class BlockHandler {
 public:
     int clb_count;
@@ -15,6 +17,7 @@ public:
     void process_clb(const string &label, const vector<string> &pins,
             const vector< vector<string> > &subblocks) {
         clb_count++;
+#ifdef VERBOSE
         cout << "CLB: " << label << endl;
         cout << "  Pins: ";
         for(int i = 0; i < pins.size(); i++) {
@@ -29,26 +32,31 @@ public:
             }
             cout << endl;
         }
+#endif
     }
 
     void process_input(const string &label, const vector<string> &pins) {
         input_count++;
+#ifdef VERBOSE
         cout << "input: " << label << endl;
         cout << "  Pins: ";
         for(int i = 0; i < pins.size(); i++) {
             cout << " " << pins[i];
         }
         cout << endl;
+#endif
     }
 
     void process_output(const string &label, const vector<string> &pins) {
         output_count++;
+#ifdef VERBOSE
         cout << "output: " << label << endl;
         cout << "  Pins: ";
         for(int i = 0; i < pins.size(); i++) {
             cout << " " << pins[i];
         }
         cout << endl;
+#endif
     }
 };
 
