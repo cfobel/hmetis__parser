@@ -3,7 +3,9 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 #include <boost/foreach.hpp>
+#include "VPRNetParser.hpp"
 
 class BlockHandler {
 public:
@@ -29,6 +31,15 @@ public:
 
     virtual void process_global(const string &label) {
         global_count++;
+    }
+
+    virtual void parse(VPRNetParser &p, ifstream &in_stream) {
+        p.init();
+        p.register_input_process_func(boost::bind(&BlockHandler::process_input, this, _1, _2));
+        p.register_output_process_func(boost::bind(&BlockHandler::process_output, this, _1, _2));
+        p.register_funcblock_process_func(boost::bind(&BlockHandler::process_funcblock, this, _1, _2, _3, _4));
+        p.register_global_process_func(boost::bind(&BlockHandler::process_global, this, _1));
+        p.parse(in_stream);
     }
 };
 
@@ -81,6 +92,15 @@ public:
     virtual void process_global(const string &label) {
         BlockHandler::process_global(label);
         cout << "global: " << label << endl;
+    }
+
+    virtual void parse(VPRNetParser &p, ifstream &in_stream) {
+        p.init();
+        p.register_input_process_func(boost::bind(&VerboseHandler::process_input, this, _1, _2));
+        p.register_output_process_func(boost::bind(&VerboseHandler::process_output, this, _1, _2));
+        p.register_funcblock_process_func(boost::bind(&VerboseHandler::process_funcblock, this, _1, _2, _3, _4));
+        p.register_global_process_func(boost::bind(&VerboseHandler::process_global, this, _1));
+        p.parse(in_stream);
     }
 };
 
