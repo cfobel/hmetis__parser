@@ -80,12 +80,20 @@ public:
     void register_global_process_func(global_process_func_t fun) { 
         global_process_func = fun; }
 
-    void process_input() { input_process_func(label, pin_list); }
-    void process_output() { output_process_func(label, pin_list); }
-    void process_funcblock() { 
-        funcblock_process_func(funcblocktype, label, pin_list, subblocks);
+    void process_input() {
+        if(input_process_func) input_process_func(label, pin_list); 
     }
-    void process_global() { global_process_func(label); }
+
+    void process_output() {
+        if(output_process_func) output_process_func(label, pin_list); 
+    }
+
+    void process_funcblock() {
+        if(funcblock_process_func) funcblock_process_func(funcblocktype, label, pin_list, subblocks);
+    }
+    void process_global() {
+        if(global_process_func) global_process_func(label);
+    }
 };
 
 #endif
