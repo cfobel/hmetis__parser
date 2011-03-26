@@ -13,7 +13,6 @@ int main(int argc, char** argv) {
     }
     ifstream file1(argv[1]);
 
-    cout << "Initialize" << endl;
 	parser.init();
     // Here we register the functions of the BlockHandler instance b to handle
     // the processing of function blocks, inputs, and outputs, using the Boost bind
@@ -25,15 +24,30 @@ int main(int argc, char** argv) {
     parser.register_funcblock_process_func(boost::bind(&BlockHandler::process_funcblock, &b, _1, _2, _3, _4));
     parser.register_global_process_func(boost::bind(&BlockHandler::process_global, &b, _1));
     parser.parse(file1);
-    file1.close();
-    cout << "Done" << endl;
 
+
+    cout << "------------------------------------------------------------------------" << endl;
+    cout << "PASS 1:" << endl;
     // If we had simply passed "b" to bind above, all of the following counts
     // would be zero, since the state of instance "b" would remain unchanged.
-    cout << "funcblock count:    " << b.funcblock_count << endl;
-    cout << "Input count:  " << b.input_count << endl;
-    cout << "Output count: " << b.output_count << endl;
-    cout << "Global count: " << b.global_count << endl;
+    cout << "  Funcblock count:    " << b.funcblock_count << endl;
+    cout << "  Input count:        " << b.input_count << endl;
+    cout << "  Output count:       " << b.output_count << endl;
+    cout << "  Global count:       " << b.global_count << endl;
 
+    cout << "------------------------------------------------------------------------" << endl;
+    cout << "PASS 2:" << endl;
+
+    file1.clear();
+    file1.seekg(0, ios::beg);
+
+    VerboseHandler v;
+    parser.register_input_process_func(boost::bind(&VerboseHandler::process_input, &v, _1, _2));
+    parser.register_output_process_func(boost::bind(&VerboseHandler::process_output, &v, _1, _2));
+    parser.register_funcblock_process_func(boost::bind(&VerboseHandler::process_funcblock, &v, _1, _2, _3, _4));
+    parser.register_global_process_func(boost::bind(&VerboseHandler::process_global, &v, _1));
+    parser.parse(file1);
+
+    file1.close();
 	return 0;
 }
