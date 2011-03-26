@@ -13,10 +13,18 @@ using namespace std;
 
 #define DEF_BUFSIZE 8192
 
+struct SubBlock {
+    string label;
+    vector<string> input_pins;
+    string output_pin;
+    string clock_pin;
+};
+
+
 typedef boost::function<void (const string &label, const vector<string> &pins)> 
             process_func_t;
 typedef boost::function<void (const string &label, const vector<string> &pins,
-                                        const vector< vector<string> > &subblocks)> 
+                                        const vector<SubBlock> &subblocks)> 
             clb_process_func_t;
 
 class VPRNetParser {
@@ -30,14 +38,16 @@ class VPRNetParser {
 	const char *be;
 	const char *pin_start;
 	const char *label_start;
+	const char *subblock_label_start;
 
 	int cs;
 	int have;
 	int length;
 
     vector<string> clb_pin_list;
-    vector<string> *p_subblock_pin_list;
-    vector<vector<string> > subblocks;
+    SubBlock *p_subblock;
+    vector<SubBlock> subblocks;
+    string subblock_label;
     string label;
     bool in_pin_list;
     bool in_subblock_pin_list;

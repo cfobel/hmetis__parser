@@ -15,7 +15,7 @@ public:
 
     BlockHandler() : clb_count(0), input_count(0), output_count(0) {}
     void process_clb(const string &label, const vector<string> &pins,
-            const vector< vector<string> > &subblocks) {
+            const vector<SubBlock> &subblocks) {
         clb_count++;
 #ifdef VERBOSE
         cout << "CLB: " << label << endl;
@@ -25,11 +25,13 @@ public:
         }
         cout << endl;
         int i = 0;
-        BOOST_FOREACH(const vector<string> &v, subblocks) {
-            cout << "  Subblock[" << i++ << "]:";
-            BOOST_FOREACH(string s, v) {
+        BOOST_FOREACH(const SubBlock &subblock, subblocks) {
+            cout << "  Subblock[" << subblock.label << "]:";
+            BOOST_FOREACH(const string s, subblock.input_pins) {
                 cout << " " << s;
             }
+            cout << " " << subblock.output_pin;
+            cout << " " << subblock.clock_pin;
             cout << endl;
         }
 #endif

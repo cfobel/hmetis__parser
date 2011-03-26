@@ -13,13 +13,17 @@
     }
 
     action start_subblock {
-        subblocks.push_back(vector<string>());
-        p_subblock_pin_list = &subblocks[subblocks.size() - 1];
+        subblocks.push_back(SubBlock());
+        p_subblock = &subblocks[subblocks.size() - 1];
         in_subblock_pin_list = true;
     }
 
     action end_subblock {
         in_subblock_pin_list = false;
+        int num_pins = p_subblock->input_pins.size();
+        p_subblock->output_pin = p_subblock->input_pins[num_pins - 2];
+        p_subblock->clock_pin = p_subblock->input_pins[num_pins - 1];
+        p_subblock->input_pins.resize(num_pins - 2);
     }
 
 	action end_input {
@@ -71,9 +75,21 @@
             clb_pin_list.push_back( 
                 string(pin_start, fpc - pin_start));
         } else if(in_subblock_pin_list) {
-            (*p_subblock_pin_list).push_back( 
+            p_subblock->input_pins.push_back( 
                 string(pin_start, fpc - pin_start));
         }
+    }
+
+    action start_subblock_label {
+        subblock_label_start = fpc;
+    }
+    
+    action end_subblock_label {
+        length = fpc - subblock_label_start;
+        if(length < 0) {
+            subblock_label_start = buf + (subblock_label_start - be);
+        }
+        p_subblock->label = string(subblock_label_start, fpc - subblock_label_start);
     }
 
     action start_label {
@@ -97,12 +113,14 @@
 	label_char = alnum | [\[\]_:\\];
 	label = label_char (label_char)* $1 %0;
     block_label = label >start_label %end_label;
+    subblocklabel = label >start_subblock_label %end_subblock_label;
 	paddedlabel = whitespace+ block_label whitespace*;
+	paddedsubblocklabel = whitespace+ subblocklabel whitespace*;
 	pinlabel = (label) >start_pin %end_pin;
 
 	pins = whitespace+ pinlabel ('\\\n' | whitespace+ | pinlabel)* $1 %0;
 	pinlist = ( 'pinlist:' pins ) >start_pinlist %end_pinlist;
-	subblock = ( 'subblock:' pins ) >start_subblock %end_subblock;
+	subblock = ( 'subblock:' paddedsubblocklabel pins ) >start_subblock %end_subblock;
     comment = ( '#' (whitespace* word)** );
     endofline = ( comment? whitespace* '\n' );
 	emptyline = whitespace* endofline;
