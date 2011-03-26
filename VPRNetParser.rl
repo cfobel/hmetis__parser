@@ -20,10 +20,9 @@
 
     action end_subblock {
         in_subblock_pin_list = false;
-        int num_pins = p_subblock->input_pins.size();
-        p_subblock->output_pin = p_subblock->input_pins[num_pins - 2];
-        p_subblock->clock_pin = p_subblock->input_pins[num_pins - 1];
-        p_subblock->input_pins.resize(num_pins - 2);
+        int num_pins = p_subblock->pins.size();
+        p_subblock->clock_pin = p_subblock->pins[num_pins - 1];
+        p_subblock->pins.resize(num_pins - 1);
     }
 
 	action end_input {
@@ -87,7 +86,7 @@
             pin_list.push_back( 
                 string(pin_start, fpc - pin_start));
         } else if(in_subblock_pin_list) {
-            p_subblock->input_pins.push_back( 
+            p_subblock->pins.push_back( 
                 string(pin_start, fpc - pin_start));
         }
     }

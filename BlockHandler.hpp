@@ -29,10 +29,9 @@ public:
         int i = 0;
         BOOST_FOREACH(const SubBlock &subblock, subblocks) {
             cout << "  Subblock[" << subblock.label << "]:";
-            BOOST_FOREACH(const string s, subblock.input_pins) {
+            BOOST_FOREACH(const string s, subblock.pins) {
                 cout << " " << s;
             }
-            cout << " " << subblock.output_pin;
             cout << " " << subblock.clock_pin;
             cout << endl;
         }

@@ -15,8 +15,7 @@ using namespace std;
 
 struct SubBlock {
     string label;
-    vector<string> input_pins;
-    string output_pin;
+    vector<string> pins;
     string clock_pin;
 };
 
