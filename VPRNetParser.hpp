@@ -21,6 +21,8 @@ struct SubBlock {
 };
 
 
+typedef boost::function<void (const string &label)> 
+        global_process_func_t;
 typedef boost::function<void (const string &label, const vector<string> &pins)> 
             process_func_t;
 typedef boost::function<void (const string &label, const vector<string> &pins,
@@ -54,6 +56,7 @@ class VPRNetParser {
     clb_process_func_t clb_process_func;
     process_func_t input_process_func;
     process_func_t output_process_func;
+    global_process_func_t global_process_func;
 
 public:
     VPRNetParser() {
@@ -71,13 +74,15 @@ public:
         output_process_func = fun; }
     void register_clb_process_func(clb_process_func_t fun) { 
         clb_process_func = fun; }
+    void register_global_process_func(global_process_func_t fun) { 
+        global_process_func = fun; }
 
     void process_input() { input_process_func(label, clb_pin_list); }
     void process_output() { output_process_func(label, clb_pin_list); }
     void process_clb() { 
         clb_process_func(label, clb_pin_list, subblocks); 
     }
-    void process_global() { cout << "global: " << label << endl; }
+    void process_global() { global_process_func(label); }
 };
 
 #endif

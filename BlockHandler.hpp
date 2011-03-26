@@ -12,8 +12,9 @@ public:
     int clb_count;
     int input_count;
     int output_count;
+    int global_count;
 
-    BlockHandler() : clb_count(0), input_count(0), output_count(0) {}
+    BlockHandler() : global_count(0), clb_count(0), input_count(0), output_count(0) {}
     void process_clb(const string &label, const vector<string> &pins,
             const vector<SubBlock> &subblocks) {
         clb_count++;
@@ -58,6 +59,13 @@ public:
             cout << " " << pins[i];
         }
         cout << endl;
+#endif
+    }
+
+    void process_global(const string &label) {
+        global_count++;
+#ifdef VERBOSE
+        cout << "global: " << label << endl;
 #endif
     }
 };

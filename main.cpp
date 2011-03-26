@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
     parser.register_input_process_func(boost::bind(&BlockHandler::process_input, &b, _1, _2));
     parser.register_output_process_func(boost::bind(&BlockHandler::process_output, &b, _1, _2));
     parser.register_clb_process_func(boost::bind(&BlockHandler::process_clb, &b, _1, _2, _3));
+    parser.register_global_process_func(boost::bind(&BlockHandler::process_global, &b, _1));
     parser.parse(file1);
     file1.close();
     cout << "Done" << endl;
@@ -32,6 +33,7 @@ int main(int argc, char** argv) {
     cout << "CLB count:    " << b.clb_count << endl;
     cout << "Input count:  " << b.input_count << endl;
     cout << "Output count: " << b.output_count << endl;
+    cout << "Global count: " << b.global_count << endl;
 
 	return 0;
 }
