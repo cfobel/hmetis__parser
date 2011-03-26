@@ -34,18 +34,30 @@
         process_output();
 	}
 
-	action start_clb {
+	action start_funcblocktype {
+        label_start = fpc;
+    }
+    
+    action end_funcblocktype {
+        length = fpc - label_start;
+        if(length < 0) {
+            label_start = buf + (label_start - be);
+        }
+        funcblocktype = string(label_start, fpc - label_start);
+    }
+
+	action start_funcblock {
         subblocks.clear();
         ls = fpc;
         ts = fpc;
     }
 
-	action end_clb {
+	action end_funcblock {
         if(ts != be) {
             ls = buf;
         }
         ts = 0;
-        process_clb();
+        process_funcblock();
 	}
 
 	action end_block {
@@ -54,7 +66,7 @@
 	}
     
     action start_pinlist {
-        clb_pin_list.clear();
+        pin_list.clear();
         in_pin_list = true;
     }
     
@@ -72,7 +84,7 @@
             pin_start = buf + (pin_start - be);
         }
         if(in_pin_list) {
-            clb_pin_list.push_back( 
+            pin_list.push_back( 
                 string(pin_start, fpc - pin_start));
         } else if(in_subblock_pin_list) {
             p_subblock->input_pins.push_back( 
@@ -112,6 +124,7 @@
 
 	label_char = alnum | [\[\]_:\\];
 	label = label_char (label_char)* $1 %0;
+    funcblocktype = label >start_funcblocktype %end_funcblocktype;
     block_label = label >start_label %end_label;
     subblocklabel = label >start_subblock_label %end_subblock_label;
 	paddedlabel = whitespace+ block_label whitespace*;
@@ -133,13 +146,13 @@
 	output =     ( '.output' paddedlabel endofline 
                         whitespace* pinlist endofline ) 
                 >start_line %end_output;
-	logicblock = ( '.clb'    paddedlabel endofline 
+	funcblock = ( '.' funcblocktype paddedlabel endofline 
                         whitespace* pinlist endofline 
                         (whitespace* subblock endofline)+ ) 
-                >start_clb %end_clb;
+                >start_funcblock %end_funcblock;
 
 	# Any number of lines.
-	main := (emptyline %end_block | global | input | output | logicblock)+;
+	main := (emptyline %end_block | global | input | output | funcblock)+;
 }%%
 
 

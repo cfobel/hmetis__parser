@@ -24,10 +24,11 @@ struct SubBlock {
 typedef boost::function<void (const string &label)> 
         global_process_func_t;
 typedef boost::function<void (const string &label, const vector<string> &pins)> 
-            process_func_t;
-typedef boost::function<void (const string &label, const vector<string> &pins,
-                                        const vector<SubBlock> &subblocks)> 
-            clb_process_func_t;
+        process_func_t;
+typedef boost::function<void (const string &funcblocktype, 
+            const string &label, const vector<string> &pins,
+            const vector<SubBlock> &subblocks)>
+        funcblock_process_func_t;
 
 class VPRNetParser {
     vector<char> buf_vector;
@@ -46,14 +47,17 @@ class VPRNetParser {
 	int have;
 	int length;
 
-    vector<string> clb_pin_list;
-    SubBlock *p_subblock;
-    vector<SubBlock> subblocks;
-    string subblock_label;
+    string funcblocktype;
     string label;
+    vector<string> pin_list;
     bool in_pin_list;
+
+    string subblock_label;
+    vector<SubBlock> subblocks;
+    SubBlock *p_subblock;
     bool in_subblock_pin_list;
-    clb_process_func_t clb_process_func;
+
+    funcblock_process_func_t funcblock_process_func;
     process_func_t input_process_func;
     process_func_t output_process_func;
     global_process_func_t global_process_func;
@@ -72,15 +76,15 @@ public:
         input_process_func = fun; }
     void register_output_process_func(process_func_t fun) { 
         output_process_func = fun; }
-    void register_clb_process_func(clb_process_func_t fun) { 
-        clb_process_func = fun; }
+    void register_funcblock_process_func(funcblock_process_func_t fun) { 
+        funcblock_process_func = fun; }
     void register_global_process_func(global_process_func_t fun) { 
         global_process_func = fun; }
 
-    void process_input() { input_process_func(label, clb_pin_list); }
-    void process_output() { output_process_func(label, clb_pin_list); }
-    void process_clb() { 
-        clb_process_func(label, clb_pin_list, subblocks); 
+    void process_input() { input_process_func(label, pin_list); }
+    void process_output() { output_process_func(label, pin_list); }
+    void process_funcblock() { 
+        funcblock_process_func(funcblocktype, label, pin_list, subblocks);
     }
     void process_global() { global_process_func(label); }
 };

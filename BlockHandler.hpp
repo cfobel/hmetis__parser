@@ -9,17 +9,18 @@
 
 class BlockHandler {
 public:
-    int clb_count;
+    int funcblock_count;
     int input_count;
     int output_count;
     int global_count;
 
-    BlockHandler() : global_count(0), clb_count(0), input_count(0), output_count(0) {}
-    void process_clb(const string &label, const vector<string> &pins,
+    BlockHandler() : global_count(0), funcblock_count(0), input_count(0), output_count(0) {}
+    void process_funcblock(const string &funcblocktype, 
+            const string &label, const vector<string> &pins,
             const vector<SubBlock> &subblocks) {
-        clb_count++;
+        funcblock_count++;
 #ifdef VERBOSE
-        cout << "CLB: " << label << endl;
+        cout << funcblocktype << ": " << label << endl;
         cout << "  Pins: ";
         for(int i = 0; i < pins.size(); i++) {
             cout << " " << pins[i];
