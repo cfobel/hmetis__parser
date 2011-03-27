@@ -14,9 +14,17 @@ env['BUILDERS']['Ragel'] = ragel_bld
 env['BUILDERS']['RagelDot'] = ragel_dot_bld
 env['BUILDERS']['Dot'] = dot_bld
 
-# Generate foo.vds from foo.txt using mk_vds
+DEBUG = ARGUMENTS.get('DEBUG', 0)
+
+if DEBUG:
+    env.Append(CPPFLAGS=['-g'])
+    env.Append(LINKFLAGS=['-g'])
+else:
+    env.Append(CPPFLAGS=['-O3'])
+
+# Generate foo.vds from foo.txt using mk_vdu
 vpr_source = env.Ragel('VPRNetParser.rl')
-Program('VPRNetParser', ['main.cpp', vpr_source])
+env.Program('VPRNetParser', ['main.cpp', vpr_source])
 
 dot = env.RagelDot('VPRNetParser.rl')
 env.Dot(dot)

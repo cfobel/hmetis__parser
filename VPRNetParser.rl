@@ -123,7 +123,7 @@
 
 	label_char = alnum | [\[\]_:\\];
 	label = label_char (label_char)* $1 %0;
-    funcblocktype = label >start_funcblocktype %end_funcblocktype;
+    funcblocktype = ('.' label) >start_funcblocktype %end_funcblocktype;
     block_label = label >start_label %end_label;
     subblocklabel = label >start_subblock_label %end_subblock_label;
 	paddedlabel = whitespace+ block_label whitespace*;
@@ -145,7 +145,7 @@
 	output =     ( '.output' paddedlabel endofline 
                         whitespace* pinlist endofline ) 
                 >start_line %end_output;
-	funcblock = ( '.' funcblocktype paddedlabel endofline 
+	funcblock = ( funcblocktype paddedlabel endofline 
                         whitespace* pinlist endofline 
                         (whitespace* subblock endofline)+ ) 
                 >start_funcblock %end_funcblock;

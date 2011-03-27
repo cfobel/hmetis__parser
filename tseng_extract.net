@@ -1,5 +1,7 @@
-     # test
 .global pclk
+
+.input pclk
+pinlist: pclk 
 
 .input tin_pv10_4_4_
 pinlist: tin_pv10_4_4_ 
@@ -10,32 +12,11 @@ pinlist: tin_pv11_4_4_
 .output out:pv14_2_2_
 pinlist: pv14_2_2_ 
 
-.output out:pv12_3_3_
-pinlist: pv12_3_3_ 
-
 .clb ngfdn_3  # Only LATCH used.
-pinlist: n_n3810 open open open ngfdn_3 pclk 
+pinlist: pv14_2_2_ open open open ngfdn_3 pclk 
 subblock: ngfdn_3 0 open open open 4 5 
 
 .clb pv14_2_2_  # Only LUT used.
-pinlist: n_n3358 n_n4153 open open pv14_2_2_ open 
+pinlist: ngfdn_3 tin_pv10_4_4_ open open pv14_2_2_ open 
 subblock: pv14_2_2_ 0 1 open open 4 open 
-
-.clb pv12_3_3_  # Only LUT used.
-pinlist: n_n3631 n_n3367 open open pv12_3_3_ open 
-subblock: pv12_3_3_ 0 1 open open 4 open 
-
-.clb pv10_4_4_  # Only LUT used.
-pinlist: tin_pv10_4_4_ n_n4136 n_n3042 open pv10_4_4_ open 
-subblock: pv10_4_4_ 0 1 2 open 4 open 
-subblock: pv10_4_4_ 0 1 2 open 4 open 
-
-.clb pv7_5_5_  # Only LUT used.
-pinlist: n_n3130 n_n3679 open open pv7_5_5_ open 
-subblock: pv7_5_5_ 0 1 open open 4 open 
-
-.clb ngfdn_3
-pinlist: n_n3810 open open open ngfdn_3 pclk 
-subblock: ngfdn_3 0 open open open 4 5 
-subblock: ngfdn_3 0 open open open 4 5 
 
