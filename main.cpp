@@ -1,5 +1,5 @@
 #include "VPRNetParser.hpp"
-#include "BlockHandler.hpp"
+#include "NetlistReader.hpp"
 #include <fstream>
 
 int main(int argc, char** argv) {
