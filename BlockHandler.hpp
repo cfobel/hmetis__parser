@@ -23,21 +23,47 @@ struct parse_data_t {
     struct s_net *net_list;
     t_subblock **subblock_list;
     int *subblocks_count;
-    net_map_t net_map;
 };
 
 
-class BlockHandler {
-public:
+class NetlistReader {
+    VPRNetParser p;
+    ifstream &in_stream;
+    map<string, vector<int> > pin_class_map;
+    net_map_t net_map;
+
     int funcblock_count;
     int input_count;
     int output_count;
     int global_count;
-    map<string, vector<int> > pin_class_map;
-    
 
-    BlockHandler() : global_count(0), funcblock_count(0), input_count(0), 
-                    output_count(0) {
+    int net_count;
+    int block_count;
+
+    int net_index;
+    int block_index;
+
+    t_subblock_data *subblock_data_ptr;
+    struct s_block *block_list;
+    struct s_net *net_list;
+    t_subblock **subblock_list;
+    int *subblocks_count;
+
+public:
+    NetlistReader(ifstream &in_stream) : in_stream(in_stream),
+            net_index(0), block_index(0),
+            funcblock_count(0), input_count(0),
+            output_count(0), global_count(0) {
+        init_pin_class_map();
+        p = VPRNetParser(32 << 10);
+    }
+
+    void reset() {
+        net_index = 0;
+        block_index = 0;
+    }
+
+    void init_pin_class_map() {
         pin_class_map[".input"] = boost::assign::list_of
                                                 (RECEIVER)
                                                 (DRIVER)
@@ -58,222 +84,156 @@ public:
                                                 (RECEIVER);
     }
 
-    virtual void process_funcblock(const string &funcblocktype, 
+    void rewind() {
+        reset();
+        in_stream.clear();
+        in_stream.seekg(0, ios::beg);
+    }
+
+    /* Count pass: START */
+    void count_pass() {
+        p.init();
+        p.register_input_process_func(boost::bind(&NetlistReader::count_process_input, this, _1, _2));
+        p.register_output_process_func(boost::bind(&NetlistReader::count_process_output, this, _1, _2));
+        p.register_funcblock_process_func(boost::bind(&NetlistReader::count_process_funcblock, this, _1, _2, _3, _4));
+        p.register_global_process_func(boost::bind(&NetlistReader::count_process_global, this, _1));
+        p.parse(in_stream);
+        net_count = net_index;
+        block_count = block_index;
+    }
+
+    void count_process_funcblock(const string &funcblocktype, 
             const string &label, const vector<string> &pins,
             const vector<SubBlock> &subblocks) {
         funcblock_count++;
-    }
-
-    virtual void process_input(const string &label, const vector<string> &pins) {
-        input_count++;
-    }
-
-    virtual void process_output(const string &label, const vector<string> &pins) {
-        output_count++;
-    }
-
-    virtual void process_global(const string &label) {
-        global_count++;
-    }
-
-    virtual void parse(VPRNetParser &p, ifstream &in_stream) {
-        p.init();
-        p.register_input_process_func(boost::bind(&BlockHandler::process_input, this, _1, _2));
-        p.register_output_process_func(boost::bind(&BlockHandler::process_output, this, _1, _2));
-        p.register_funcblock_process_func(boost::bind(&BlockHandler::process_funcblock, this, _1, _2, _3, _4));
-        p.register_global_process_func(boost::bind(&BlockHandler::process_global, this, _1));
-        p.parse(in_stream);
-    }
-};
-
-
-class CountPass : public BlockHandler {
-public:
-    int net_count;
-    CountPass() : net_count(0), BlockHandler() {}
-
-    virtual void process_funcblock(const string &funcblocktype, 
-            const string &label, const vector<string> &pins,
-            const vector<SubBlock> &subblocks) {
-        BlockHandler::process_funcblock(funcblocktype, label, pins, subblocks);
         for(int i = 0; i < pins.size(); i++) {
-            if(pins[i] != "open") {
-                int pin_class = pin_class_map[funcblocktype][i];
-                if(pin_class == RECEIVER) {
-                    // do nothing for now
-                } else if(pin_class == DRIVER) {
-                    net_count++;
-                }
+            const int &pin_class = pin_class_map[funcblocktype][i];
+            if(pins[i] != "open" && pin_class == DRIVER) {
+                net_index++;
             }
         }
+        block_index++;
     }
 
-    virtual void process_input(const string &label, const vector<string> &pins) {
-        BlockHandler::process_input(label, pins);
-        net_count++;
+    void count_process_input(const string &label, const vector<string> &pins) {
+        input_count++;
+        net_index++;
+        block_index++;
     }
 
-    virtual void parse(VPRNetParser &p, ifstream &in_stream) {
+    void count_process_output(const string &label, const vector<string> &pins) {
+        output_count++;
+        block_index++;
+    }
+
+    void count_process_global(const string &label) {
+        global_count++;
+    }
+    /* Count pass: END */
+
+    /* Load pass: START */
+    void load_pass() {
+        cout << "allocating structures based on block_count: "
+            << block_count << endl;
+        cout << "allocating structures based on net_count: "
+            << net_count << endl;
+        block_list = (struct s_block *)malloc(sizeof(struct s_block) * block_count);
+        memset(block_list, 0, (sizeof(struct s_block) * block_count));
+
+        net_list = (struct s_net *)malloc(sizeof(struct s_net) * net_count);
+        memset(net_list, 0, (sizeof(struct s_net) * net_count));
+
+        subblock_list = (t_subblock **)malloc(sizeof(t_subblock *) * block_count);
+        memset(subblock_list, 0, (sizeof(t_subblock *) * block_count));
+
+        subblocks_count = (int *)malloc(sizeof(int) * block_count);
+        memset(subblocks_count, 0, (sizeof(int) * block_count));
+
         p.init();
-        p.register_input_process_func(boost::bind(&CountPass::process_input, this, _1, _2));
-        p.register_output_process_func(boost::bind(&CountPass::process_output, this, _1, _2));
-        p.register_funcblock_process_func(boost::bind(&CountPass::process_funcblock, this, _1, _2, _3, _4));
-        p.register_global_process_func(boost::bind(&CountPass::process_global, this, _1));
+        p.register_input_process_func(boost::bind(&NetlistReader::load_process_input, this, _1, _2));
+        p.register_output_process_func(boost::bind(&NetlistReader::load_process_output, this, _1, _2));
+        p.register_funcblock_process_func(boost::bind(&NetlistReader::load_process_funcblock, this, _1, _2, _3, _4));
         p.parse(in_stream);
-    }
-};
-
-
-class LoadPass : public BlockHandler {
-    t_subblock_data *subblock_data_ptr;
-    struct s_block *block_list;
-    struct s_net *net_list;
-    t_subblock **subblock_list;
-    int *subblocks_count;
-    net_map_t *p_net_map;
-public:
-    int net_count;
-    int net_index;
-    int block_count;
-    int block_index;
-
-    LoadPass(int net_count, int block_count) : 
-                net_index(0),
-                block_index(0), net_count(net_count), 
-                block_count(block_count), BlockHandler() {
-            block_list = (struct s_block *)malloc(sizeof(struct s_block) * block_count);
-            memset(block_list, 0, (sizeof(struct s_block) * block_count));
-
-            net_list = (struct s_net *)malloc(sizeof(struct s_net) * net_count);
-            memset(net_list, 0, (sizeof(struct s_net) * net_count));
-
-            subblock_list = (t_subblock **)malloc(sizeof(t_subblock *) * block_count);
-            memset(subblock_list, 0, (sizeof(t_subblock *) * block_count));
-
-            subblocks_count = (int *)malloc(sizeof(int) * block_count);
-            memset(subblocks_count, 0, (sizeof(int) * block_count));
+        load_display_contents();
     }
 
-    virtual void process_funcblock(const string &funcblocktype, 
+    void load_process_funcblock(const string &funcblocktype, 
             const string &label, const vector<string> &pins,
             const vector<SubBlock> &subblocks) {
-        BlockHandler::process_funcblock(funcblocktype, label, pins, subblocks);
+        funcblock_count++;
         for(int i = 0; i < pins.size(); i++) {
-            if(pins[i] != "open") {
-                int pin_class = pin_class_map[funcblocktype][i];
-                if(pin_class == RECEIVER) {
-                    // do nothing for now
-                } else if(pin_class == DRIVER) {
-                    process_net(pins[i]);
-                    net_index++;
-                }
+            const int &pin_class = pin_class_map[funcblocktype][i];
+            if(pins[i] != "open" && pin_class == DRIVER) {
+                load_process_net(pins[i]);
+                net_index++;
             }
         }
         
         int num_pins = pin_class_map[funcblocktype].size();
         block_list[block_index].nets = (int *)calloc(num_pins, sizeof(int));
         subblocks_count[block_index] = subblocks.size();
-        process_block(label);
+        load_process_block(label);
         block_index++;
     }
 
-    void process_net(const string &label) {
+    void load_process_net(const string &label) {
         net_list[net_index].name = (char *)calloc(label.size() + 1, sizeof(char));
         strcpy(net_list[net_index].name, label.c_str());
-        (*p_net_map)[label] = net_index;
+        net_map[label] = net_index;
     }
 
-    void process_block(const string &label) {
+    void load_process_block(const string &label) {
         block_list[block_index].name = (char *)calloc(label.size() + 1, sizeof(char));
         strcpy(block_list[block_index].name, label.c_str());
     }
 
-    virtual void process_input(const string &label, const vector<string> &pins) {
-        BlockHandler::process_input(label, pins);
-        process_net(pins[0]);
+    void load_process_input(const string &label, const vector<string> &pins) {
+        load_process_net(pins[0]);
         net_index++;
         int num_pins = pin_class_map[".input"].size();
         block_list[block_index].nets = (int *)calloc(num_pins, sizeof(int));
-        process_block(label);
+        load_process_block(label);
         block_index++;
     }
 
-    virtual void process_output(const string &label, const vector<string> &pins) {
-        BlockHandler::process_output(label, pins);
+    void load_process_output(const string &label, const vector<string> &pins) {
         int num_pins = pin_class_map[".output"].size();
         block_list[block_index].nets = (int *)calloc(num_pins, sizeof(int));
-        process_block(label);
+        load_process_block(label);
         block_index++;
     }
 
-    void parse(VPRNetParser &p, ifstream &in_stream, parse_data_t &d) {
-        p_net_map = &d.net_map;
-        p.init();
-        p.register_input_process_func(boost::bind(&LoadPass::process_input, this, _1, _2));
-        p.register_output_process_func(boost::bind(&LoadPass::process_output, this, _1, _2));
-        p.register_funcblock_process_func(boost::bind(&LoadPass::process_funcblock, this, _1, _2, _3, _4));
-        p.register_global_process_func(boost::bind(&LoadPass::process_global, this, _1));
-        p.parse(in_stream);
-
-        d.subblock_data_ptr = subblock_data_ptr;
-        d.block_list = block_list;
-        d.net_list = net_list;
-        d.subblock_list = subblock_list;
-        d.subblocks_count = subblocks_count;
-    }
-
-    void display_contents() {
-        for(int i = 0; i < block_index; i++) {
+    void load_display_contents() {
+        for(int i = 0; i < block_count; i++) {
             cout << "block[" << i << "]: " << block_list[i].name << " has " << subblocks_count[i] << " subblocks" << endl;
         }
-        for(int i = 0; i < net_index; i++) {
+        for(int i = 0; i < net_count; i++) {
             cout << "net[" << i << "]: " << net_list[i].name << endl;
         }
     }
-};
+    /* Load pass: END */
 
-
-class MapPass : public BlockHandler {
-    t_subblock_data *subblock_data_ptr;
-    struct s_block *block_list;
-    struct s_net *net_list;
-    t_subblock **subblock_list;
-    int *subblocks_count;
-    net_map_t &net_map;
-public:
-    int net_count;
-    int net_index;
-    int block_count;
-    int block_index;
-    int total_subblocks;
-
-    MapPass(int net_count, int block_count, parse_data_t &data) : 
-                net_index(0), block_index(0), net_count(net_count),
-                block_count(block_count), BlockHandler(),
-                subblock_data_ptr(data.subblock_data_ptr),
-                block_list(data.block_list), net_list(data.net_list),
-                net_map(data.net_map),
-                subblocks_count(data.subblocks_count),
-                subblock_list(data.subblock_list) {
-        total_subblocks = 0;
-        for(int i = 0; i < block_count; i++) {
-            total_subblocks += subblocks_count[i];
-        }            
+    /* Map pass: START */
+    void map_pass() {
         subblock_list = (t_subblock **)calloc(block_count, sizeof(t_subblock*));
         memset(subblock_list, 0, sizeof(t_subblock *) * block_count);
+
+        p.init();
+        p.register_input_process_func(boost::bind(&NetlistReader::map_process_input, this, _1, _2));
+        p.register_output_process_func(boost::bind(&NetlistReader::map_process_output, this, _1, _2));
+        p.register_funcblock_process_func(boost::bind(&NetlistReader::map_process_funcblock, this, _1, _2, _3, _4));
+        p.parse(in_stream);
+        map_display_contents();
     }
 
-    virtual void process_funcblock(const string &funcblocktype, 
+    void map_process_funcblock(const string &funcblocktype, 
             const string &label, const vector<string> &pins,
             const vector<SubBlock> &subblocks) {
-        BlockHandler::process_funcblock(funcblocktype, label, pins, subblocks);
         int num_pins = pin_class_map[funcblocktype].size();
         for(int i = 0; i < pins.size(); i++) {
             if(pins[i] != "open") {
-                int pin_class = pin_class_map[funcblocktype][i];
-                if(pin_class == RECEIVER) {
-                    // do nothing for now
-                } else if(pin_class == DRIVER) {
+                const int &pin_class = pin_class_map[funcblocktype][i];
+                if(pin_class == DRIVER) {
                     net_index++;
                 }
                 block_list[block_index].nets[i] = net_map[pins[i]];
@@ -334,8 +294,7 @@ public:
         block_index++;
     }
 
-    virtual void process_input(const string &label, const vector<string> &pins) {
-        BlockHandler::process_input(label, pins);
+    void map_process_input(const string &label, const vector<string> &pins) {
         bool used_pin = false;
 
         for(int i = 0; i < pin_class_map[".input"].size(); i++) {
@@ -352,8 +311,7 @@ public:
         block_index++;
     }
 
-    virtual void process_output(const string &label, const vector<string> &pins) {
-        BlockHandler::process_output(label, pins);
+    void map_process_output(const string &label, const vector<string> &pins) {
         bool used_pin = false;
 
         for(int i = 0; i < pin_class_map[".output"].size(); i++) {
@@ -369,17 +327,8 @@ public:
         block_index++;
     }
 
-    void parse(VPRNetParser &p, ifstream &in_stream) {
-        p.init();
-        p.register_input_process_func(boost::bind(&MapPass::process_input, this, _1, _2));
-        p.register_output_process_func(boost::bind(&MapPass::process_output, this, _1, _2));
-        p.register_funcblock_process_func(boost::bind(&MapPass::process_funcblock, this, _1, _2, _3, _4));
-        p.register_global_process_func(boost::bind(&MapPass::process_global, this, _1));
-        p.parse(in_stream);
-    }
-
-    void display_contents() {
-        for(int i = 0; i < block_index; i++) {
+    void map_display_contents() {
+        for(int i = 0; i < block_count; i++) {
             cout << "block[" << i << "]: " << block_list[i].name << " has " << subblocks_count[i] << " subblocks" << endl;
             for(int j = 0; j < 3; j++) {
                 cout << "  net[" << j << "]: " << block_list[i].nets[j] << endl;
@@ -388,73 +337,33 @@ public:
                 cout << "  subblock[" << subblock_list[i][j].name << "]" << endl;
             }
         }
-        for(int i = 0; i < net_index; i++) {
+        for(int i = 0; i < net_count; i++) {
             cout << "net[" << i << "]: " << net_list[i].name << endl;
         }
     }
-};
+    /* Map pass: END */
 
+    parse_data_t parse() {
+        count_pass();
 
-class VerboseHandler : public BlockHandler {
-    t_subblock_data *subblock_data_ptr;
-    struct s_block *block_list;
-    struct s_net *net_list;
-public:
-    VerboseHandler() : BlockHandler() {}
+        cout << "------------------------------------------------------------------------" << endl;
+        cout << "COUNT PASS:" << endl;
+        cout << "  Global count:       " << global_count << endl;
+        cout << "  Funcblock count:    " << funcblock_count << endl;
+        cout << "  Input count:        " << input_count << endl;
+        cout << "  Output count:       " << output_count << endl;
+        cout << "  --------------------------" << endl;
+        cout << "  Block count:        " << block_count << endl;
+        cout << "  Net count:          " << net_count << endl;
 
-    virtual void process_funcblock(const string &funcblocktype, 
-            const string &label, const vector<string> &pins,
-            const vector<SubBlock> &subblocks) {
-        BlockHandler::process_funcblock(funcblocktype, label, pins, subblocks);
-        cout << funcblocktype << ": " << label << endl;
-        cout << "  Pins: ";
-        for(int i = 0; i < pins.size(); i++) {
-            cout << " " << pins[i];
-        }
-        cout << endl;
-        int i = 0;
-        BOOST_FOREACH(const SubBlock &subblock, subblocks) {
-            cout << "  Subblock[" << subblock.label << "]:";
-            BOOST_FOREACH(const string s, subblock.pins) {
-                cout << " " << s;
-            }
-            cout << " " << subblock.clock_pin;
-            cout << endl;
-        }
-    }
-
-    virtual void process_input(const string &label, const vector<string> &pins) {
-        BlockHandler::process_input(label, pins);
-        cout << "input: " << label << endl;
-        cout << "  Pins: ";
-        for(int i = 0; i < pins.size(); i++) {
-            cout << " " << pins[i];
-        }
-        cout << endl;
-    }
-
-    virtual void process_output(const string &label, const vector<string> &pins) {
-        BlockHandler::process_output(label, pins);
-        cout << "output: " << label << endl;
-        cout << "  Pins: ";
-        for(int i = 0; i < pins.size(); i++) {
-            cout << " " << pins[i];
-        }
-        cout << endl;
-    }
-
-    virtual void process_global(const string &label) {
-        BlockHandler::process_global(label);
-        cout << "global: " << label << endl;
-    }
-
-    virtual void parse(VPRNetParser &p, ifstream &in_stream) {
-        p.init();
-        p.register_input_process_func(boost::bind(&VerboseHandler::process_input, this, _1, _2));
-        p.register_output_process_func(boost::bind(&VerboseHandler::process_output, this, _1, _2));
-        p.register_funcblock_process_func(boost::bind(&VerboseHandler::process_funcblock, this, _1, _2, _3, _4));
-        p.register_global_process_func(boost::bind(&VerboseHandler::process_global, this, _1));
-        p.parse(in_stream);
+        rewind();
+        cout << "------------------------------------------------------------------------" << endl;
+        cout << "LOAD PASS:" << endl;
+        load_pass();
+        rewind();
+        cout << "------------------------------------------------------------------------" << endl;
+        cout << "MAP PASS:" << endl;
+        map_pass();
     }
 };
 
