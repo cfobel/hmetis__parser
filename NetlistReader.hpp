@@ -204,12 +204,14 @@ public:
     }
 
     void load_display_contents() {
+#ifdef VERBOSE
         for(int i = 0; i < block_count; i++) {
             cout << "block[" << i << "]: " << block_list[i].name << " has " << subblocks_count[i] << " subblocks" << endl;
         }
         for(int i = 0; i < net_count; i++) {
             cout << "net[" << i << "]: " << net_list[i].name << endl;
         }
+#endif
     }
     /* Load pass: END */
 
@@ -328,6 +330,7 @@ public:
     }
 
     void map_display_contents() {
+#ifdef VERBOSE
         for(int i = 0; i < block_count; i++) {
             cout << "block[" << i << "]: " << block_list[i].name << " has " << subblocks_count[i] << " subblocks" << endl;
             for(int j = 0; j < 3; j++) {
@@ -340,6 +343,7 @@ public:
         for(int i = 0; i < net_count; i++) {
             cout << "net[" << i << "]: " << net_list[i].name << endl;
         }
+#endif
     }
     /* Map pass: END */
 

@@ -122,15 +122,17 @@
 	whitespace = [ \t];
 
 	label_char = alnum | [\[\]_:\\];
-	label = label_char (label_char)* $1 %0;
+    label = (('\\' label_char) | label_char - '\\') (label_char)* $1 %0;
     funcblocktype = ('.' label) >start_funcblocktype %end_funcblocktype;
     block_label = label >start_label %end_label;
     subblocklabel = label >start_subblock_label %end_subblock_label;
 	paddedlabel = whitespace+ block_label whitespace*;
-	paddedsubblocklabel = whitespace+ subblocklabel whitespace*;
+	paddedsubblocklabel = whitespace+ subblocklabel;
 	pinlabel = (label) >start_pin %end_pin;
 
-	pins = whitespace+ pinlabel ('\\\n' | whitespace+ | pinlabel)* $1 %0;
+    separator = ('\\\n' | whitespace);
+
+    pins = separator+ pinlabel (separator+ | pinlabel)* $1 %0;
 	pinlist = ( 'pinlist:' pins ) >start_pinlist %end_pinlist;
 	subblock = ( 'subblock:' paddedsubblocklabel pins ) >start_subblock %end_subblock;
     comment = ( '#' (whitespace* word)** );
