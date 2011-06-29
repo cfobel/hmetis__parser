@@ -164,7 +164,7 @@
 
 void VPRNetParser::init() {
     buf = &buf_vector[0];
-    BUFSIZE = buf_vector.size();
+    _BUFSIZE = buf_vector.size();
 
 	%% write init;
 }
@@ -176,7 +176,7 @@ void VPRNetParser::parse(std::istream &in_stream) {
     have = 0;
     while ( !done ) {
         /* How much space is in the buffer? */
-        int space = BUFSIZE - have;
+        int space = _BUFSIZE - have;
         if ( space == 0 ) {
             /* Buffer is full. */
             cerr << "TOKEN TOO BIG" << endl;

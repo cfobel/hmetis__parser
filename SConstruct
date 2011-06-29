@@ -1,5 +1,5 @@
 # SConstruct file
-env=Environment()
+env=Environment(CPPPATH=['../'])
 
 ragel_bld = Builder(action = '/usr/bin/ragel -G2 -o $TARGET $SOURCE',
               suffix = '.cpp', src_suffix = '.rl')
@@ -24,7 +24,7 @@ else:
 
 # Generate foo.vds from foo.txt using mk_vdu
 vpr_source = env.Ragel('VPRNetParser.rl')
-env.Program('VPRNetParser', ['main.cpp', vpr_source])
+#env.Program('VPRNetParser', ['main.cpp', vpr_source])
 
 dot = env.RagelDot('VPRNetParser.rl')
 env.Dot(dot)

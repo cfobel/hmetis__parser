@@ -32,7 +32,7 @@ typedef boost::function<void (const string &funcblocktype,
 class VPRNetParser {
     vector<char> buf_vector;
     char* buf;
-    int BUFSIZE;
+    int _BUFSIZE;
 
 	const char *ls;
 	const char *ts;
