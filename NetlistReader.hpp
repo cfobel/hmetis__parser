@@ -17,13 +17,13 @@ typedef map<string, int> net_map_t;
 
 struct arch_data_t {
     int const num_types;
-    struct s_type_descriptor const *block_types;
+    const vector<s_type_descriptor> &block_types;
     t_type_ptr const IO_type;
     int const io_ipin;
     int const io_opin;
 
     arch_data_t(int num_types,
-	     const struct s_type_descriptor *block_types,
+	     const vector<s_type_descriptor> &block_types,
 	     const t_type_ptr IO_type,
 	     int io_ipin,
 	     int io_opin) :
@@ -97,7 +97,7 @@ public:
     }
 
     void init_pin_class_map() {
-        for(int i = 0; i < arch_data.num_types; i++) {
+        for(int i = 0; i < arch_data.block_types.size(); i++) {
             const s_type_descriptor &t = arch_data.block_types[i];
 
             pin_class_map[t.name] = &t;
