@@ -9,6 +9,7 @@
 #include <fstream>
 #include "util.h"
 #include "vpr_types.h"
+#include "NetList.hpp"
 #include "VPRNetParser.hpp"
 
 using namespace std;
@@ -37,9 +38,8 @@ struct arch_data_t {
 struct parse_data_t {
     vector<Block> &block_list;
     vector<struct s_net> &net_list;
-    //t_subblock **subblock_list;
     subblock_grid_t &subblock_list;
-    int *subblocks_count;
+    vector<int> subblocks_count;
 
     parse_data_t(vector<Block> &block_list, 
             vector<struct s_net> &net_list,
@@ -70,7 +70,7 @@ class NetlistReader {
     vector<Block> &block_list;
     vector<struct s_net> &net_list;
     subblock_grid_t &subblock_list;
-    int *subblocks_count;
+    vector<int> subblocks_count;
 
     parse_data_t &parse_data;
     arch_data_t const &arch_data;
@@ -169,14 +169,9 @@ public:
             net_list[i].is_global = (boolean)false;
         }
 
-        /*
-        subblock_list = (t_subblock **)malloc(sizeof(t_subblock *) * block_count);
-        memset(subblock_list, 0, (sizeof(t_subblock *) * block_count));
-        */
         subblock_list.resize(block_count);
 
-        subblocks_count = (int *)malloc(sizeof(int) * block_count);
-        memset(subblocks_count, 0, (sizeof(int) * block_count));
+        subblocks_count = vector<int>(block_count, 0);
 
         p.init();
         p.register_input_process_func(boost::bind(&NetlistReader::load_process_input, this, _1, _2));
@@ -376,6 +371,7 @@ public:
     }
     /* Map pass: END */
 
+    //vpr::NetList parse() {
     void parse() {
         count_pass();
         rewind();
@@ -383,8 +379,78 @@ public:
         rewind();
         map_pass();
 
+        /* Builds mappings from each netlist to the blocks contained */
+        sync_nets_to_blocks();
+
+        /**********************************************************************************/
+        /* Send values back to caller */
+        t_subblock_data subblock_data;
+        subblock_data.subblock_inf = subblock_list;
+        subblock_data.num_subblocks_per_block = subblocks_count;
+        /**********************************************************************************/
+
+        vpr::NetList n(net_list, block_list, subblock_data);
+
+        /**********************************************************************************/
+        /* Send values back to caller */
+        /**********************************************************************************/
+
         parse_data.subblocks_count = subblocks_count;
+        //return n;
     }
+
+    /* This function updates the nets list to point back to blocks list */
+    void sync_nets_to_blocks() {
+        using namespace std;
+
+        int i, j, k, l;
+        t_type_ptr cur_type;
+
+        /* Count the number of sinks for each net */
+        for(j = 0; j < block_list.size(); ++j) {
+            cur_type = block_list[j].type;
+            for(k = 0; k < cur_type->num_pins; ++k) {
+                if(RECEIVER == cur_type->class_inf[cur_type->pin_class[k]].type) {
+                    int i = block_list[j].nets[k];
+                    if(OPEN != i) {
+                        ++net_list[i].num_sinks;
+                    }
+                }
+            }
+        }
+
+        /* Alloc and load block lists of nets */
+        vector<int> net_l(net_list.size(), 1); /* First sink goes at position 1, since 0 is for driver */
+
+        for(j = 0; j < block_list.size(); ++j) {
+            cur_type = block_list[j].type;
+            for(k = 0; k < cur_type->num_pins; ++k) {
+                int i = block_list[j].nets[k];
+                if(OPEN != i) {
+                    /* The list should be num_sinks + 1 driver. Re-alloc if already allocated. */
+                    int num_sinks = net_list[i].num_sinks;
+                    if(NULL == net_list[i].node_block) {
+                        net_list[i].node_block = (int *)my_malloc(sizeof(int) * (num_sinks + 1));
+                    }
+                    if(NULL == net_list[i].node_block_pin) {
+                        net_list[i].node_block_pin = (int *)my_malloc(sizeof(int) * (num_sinks + 1));
+                    }
+                    if(RECEIVER == cur_type->class_inf[cur_type->pin_class[k]].type) {
+                        l = net_l[i];
+                        net_list[i].node_block[l] = j;
+                        net_list[i].node_block_pin[l] = k;
+                        ++net_l[i];
+                    } else {
+                        assert(DRIVER == cur_type->class_inf[cur_type->pin_class[k]].type);
+                        net_list[i].node_block[0] = j;
+                        net_list[i].node_block_pin[0] = k;
+                    }
+                }
+            }
+        }
+    }
+
+
 };
 
 
