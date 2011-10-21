@@ -1,8 +1,13 @@
+import SCons.Scanner.C
+import SCons.Tool
+
 # SConstruct file
 env=Environment(CPPPATH=['../'])
+SCons.Tool.SourceFileScanner.add_scanner('.rl', SCons.Scanner.C.CScanner())
 
 ragel_bld = Builder(action = '/usr/bin/ragel -G2 -o $TARGET $SOURCE',
-              suffix = '.cpp', src_suffix = '.rl')
+              suffix = '.cpp', src_suffix = '.rl',
+              source_scanner = SCons.Scanner.C.CScanner())
 ragel_dot_bld = Builder(action = '/usr/bin/ragel -o $TARGET -V -p $SOURCE',
               suffix = '.dot', src_suffix = '.rl')
 dot_bld = Builder(action = '/usr/bin/dot -o $TARGET -Tpdf $SOURCE',
@@ -28,3 +33,5 @@ vpr_source = env.Ragel('VPRNetParser.rl')
 
 dot = env.RagelDot('VPRNetParser.rl')
 env.Dot(dot)
+
+env.Export('vpr_source')
