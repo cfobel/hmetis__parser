@@ -10,16 +10,15 @@ int main() {
     string input_path("test.hmt.part.4");
     ifstream input(input_path.c_str());
     PartitionReader pr(input);
-    pr.get_partition();
+    PartitionReader::partition_t p = pr.get_partition();
 
-#if 0
-    cout << boost::format("vertex %d is in set %d")
-        % vertex_count % vertex_id
-        << endl;
-    copy(vertices.begin(), vertices.end(),
-            ostream_iterator<int>(cout, ", "));
-    cout << endl;
-#endif
+    for(int set_id = 0; set_id < p.size(); set_id++) {
+        PartitionReader::vertex_list_t &vertices = p[set_id];
+        cout << boost::format("[%d] ") % set_id;
+        copy(vertices.begin(), vertices.end(),
+                ostream_iterator<int>(cout, ", "));
+        cout << endl;
+    }
 
     return 0;
 }

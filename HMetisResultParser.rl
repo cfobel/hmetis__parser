@@ -4,7 +4,7 @@
 	machine HMetisResultParser;
 
 	action start_parse {
-        vertex_count = 0;
+        vertex_id = 0;
 	}
 
 	action start_line {
@@ -12,22 +12,22 @@
 		ts = fpc;
 	}
 
-    action start_vertex_id {
-        vertex_id_start = fpc;
+    action start_set_id {
+        set_id_start = fpc;
     }
 
-    action end_vertex_id {
-        length = fpc - vertex_id_start;
+    action end_set_id {
+        length = fpc - set_id_start;
         if(length < 0) {
-            vertex_id_start = buf + (vertex_id_start - be);
+            set_id_start = buf + (set_id_start - be);
         }
-        vertex_id = boost::lexical_cast<int>(
-                string(vertex_id_start, fpc - vertex_id_start));
+        set_id = boost::lexical_cast<int>(
+                string(set_id_start, fpc - set_id_start));
     }
 
     action end_vertex {
         process_vertex();
-        vertex_count++;
+        vertex_id++;
     }
 
 	# Words in a line.
@@ -39,9 +39,9 @@
     comment = ( '#' (whitespace* word)** );
     endofline = ( comment? whitespace* '\n' );
 	emptyline = whitespace* endofline;
-    vertex_id = (digit+) >start_vertex_id %end_vertex_id;
+    set_id = (digit+) >start_set_id %end_set_id;
 
-	vertex = ( vertex_id endofline ) >start_line %end_vertex;
+	vertex = ( set_id endofline ) >start_line %end_vertex;
 
 	# Any number of lines.
 	main := (emptyline | vertex)+ >start_parse;

@@ -14,7 +14,7 @@ using namespace std;
 
 #define DEF_BUFSIZE 8192
 
-typedef boost::function<void (int vertex_id, int vertex_count)> 
+typedef boost::function<void (int set_id, int vertex_id)> 
         vertex_process_func_t;
 
 class HMetisResultParser {
@@ -26,14 +26,14 @@ class HMetisResultParser {
 	const char *ts;
 	const char *te;
 	const char *be;
-	const char *vertex_id_start;
+	const char *set_id_start;
 
 	int cs;
 	int have;
 	int length;
 
-    int vertex_count;
     int vertex_id;
+    int set_id;
     vertex_process_func_t vertex_process_func;
 public:
     HMetisResultParser() {
@@ -49,7 +49,7 @@ public:
         vertex_process_func = fun;
     }
     void process_vertex() {
-        if(vertex_process_func) vertex_process_func(vertex_id, vertex_count); 
+        if(vertex_process_func) vertex_process_func(set_id, vertex_id); 
     }
 };
 
