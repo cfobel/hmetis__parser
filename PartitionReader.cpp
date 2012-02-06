@@ -6,8 +6,14 @@
 
 using namespace std;
 
-int main() {
-    string input_path("test.hmt.part.4");
+int main(int argc, char **argv) {
+    using boost::format;
+    if(argc != 2) {
+        cerr << format("usage: %s <hmetis_output_path>")
+            % argv[0] << endl;
+        exit(-1);
+    }
+    string input_path(argv[1]);
     ifstream input(input_path.c_str());
     PartitionReader pr(input);
     PartitionReader::partition_t p = pr.get_partition();
