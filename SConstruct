@@ -28,10 +28,10 @@ else:
     env.Append(CPPFLAGS=['-O3'])
 
 # Generate foo.vds from foo.txt using mk_vdu
-vpr_source = env.Ragel('VPRNetParser.rl')
+hmetis_source = env.Ragel('HMetisResultParser.rl')
 #env.Program('VPRNetParser', ['main.cpp', vpr_source])
 
-dot = env.RagelDot('VPRNetParser.rl')
+dot = env.RagelDot('HMetisResultParser.rl')
 env.Dot(dot)
 
-env.Export('vpr_source')
+env.Program(['PartitionReader.cpp', hmetis_source])
