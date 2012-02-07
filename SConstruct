@@ -20,6 +20,7 @@ env['BUILDERS']['RagelDot'] = ragel_dot_bld
 env['BUILDERS']['Dot'] = dot_bld
 
 DEBUG = ARGUMENTS.get('DEBUG', 0)
+WITH_MAIN = ARGUMENTS.get('WITH_MAIN', 0)
 
 if DEBUG:
     env.Append(CPPFLAGS=['-g'])
@@ -34,4 +35,5 @@ hmetis_source = env.Ragel('HMetisResultParser.rl')
 dot = env.RagelDot('HMetisResultParser.rl')
 env.Dot(dot)
 
-env.Program(['PartitionReader.cpp', hmetis_source])
+if WITH_MAIN:
+    env.Program(['PartitionReader.cpp', hmetis_source])
