@@ -23,12 +23,11 @@
         }
         set_id = boost::lexical_cast<int>(
                 string(set_id_start, fpc - set_id_start));
-    }
-
-    action end_vertex {
         process_vertex();
         vertex_id++;
     }
+
+    action end_vertex { }
 
 	# Words in a line.
 	word = ^[ \t\n]+;
@@ -41,10 +40,10 @@
 	emptyline = whitespace* endofline;
     set_id = (digit+) >start_set_id %end_set_id;
 
-	vertex = ( set_id endofline ) >start_line %end_vertex;
+	vertex = ( endofline set_id ) >start_line %end_vertex;
 
 	# Any number of lines.
-	main := (emptyline | vertex)+ >start_parse;
+	main := (set_id (emptyline | vertex)+) >start_parse;
 }%%
 
 
