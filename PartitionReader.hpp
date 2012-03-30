@@ -13,25 +13,24 @@ public:
     typedef vector<int> vertex_list_t;
     typedef vector<vertex_list_t> partition_t;
 private:
-    HMetisResultParser p;
     ifstream &in_stream;
     partition_t partition;
     int vertex_count;
     int min_vertex;
     int max_vertex;
 public:
-    PartitionReader(ifstream &in_stream) : in_stream(in_stream), vertex_count(0) {
-        p = HMetisResultParser(32 << 10);
-    }
+    PartitionReader(ifstream &in_stream) : in_stream(in_stream), vertex_count(0) {}
 
     partition_t get_partition() {
         min_vertex = 999999999;
         max_vertex = -999999999;
         vertex_count = 0;
         partition = partition_t();
-        p.init();
-        p.register_vertex_process_func(boost::bind(&PartitionReader::process_vertex, this, _1, _2));
-        p.parse(in_stream);
+        while(!in_stream.eof()) {
+            int set_id;
+            in_stream >> set_id;
+            process_vertex(set_id, vertex_count);
+        }
         cout << boost::format("[PartitionReader] vertex_count=%d min_vertex=%d max_vertex=%d")
             % vertex_count
             % min_vertex
@@ -43,10 +42,6 @@ public:
     void process_vertex(int set_id, int vertex_id) {
         vertex_count++;
         if(set_id + 1 > partition.size()) {
-#if 0
-            cout << boost::format("Resizing partition list: %d->%d")
-                % partition.size() % (set_id + 1) << endl;
-#endif
             partition.resize(set_id + 1);
         }
         vertex_list_t &vertices = partition[set_id];
