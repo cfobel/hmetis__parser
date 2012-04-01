@@ -26,9 +26,8 @@ public:
         max_vertex = -999999999;
         vertex_count = 0;
         partition = partition_t();
-        while(!in_stream.eof()) {
-            int set_id;
-            in_stream >> set_id;
+        int set_id;
+        while(in_stream >> set_id) {
             process_vertex(set_id, vertex_count);
         }
         cout << boost::format("[PartitionReader] vertex_count=%d min_vertex=%d max_vertex=%d")
