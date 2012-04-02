@@ -37,5 +37,4 @@ env.Dot(dot)
 
 if WITH_MAIN:
     env.Program(['PartitionReader.cpp', hmetis_source])
-    env.Program(['test.cpp',])
 env.Export('hmetis_source')
